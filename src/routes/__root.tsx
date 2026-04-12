@@ -39,7 +39,6 @@ export const Route = createRootRoute({
       { property: "og:description", content: "AI-powered note organization" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

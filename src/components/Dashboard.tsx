@@ -112,14 +112,14 @@ export function Dashboard() {
   }, [notes, search, selectedFolder]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl px-4 py-6">
+    <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       {/* Header */}
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-4 flex items-center justify-between sm:mb-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Brain className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary sm:h-9 sm:w-9">
+            <Brain className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Knowledge Hub</h1>
+          <h1 className="text-base font-semibold text-foreground sm:text-lg">Knowledge Hub</h1>
         </div>
         <div className="flex items-center gap-1">
           <ClientOnly fallback={null}>
@@ -132,13 +132,13 @@ export function Dashboard() {
       </header>
 
       {/* Note Input */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <NoteInput onSave={handleSave} isProcessing={isProcessing} />
       </div>
 
       {/* Search & Filter */}
       {notes.length > 0 && (
-        <div className="mb-4 space-y-3">
+        <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
           <SearchBar value={search} onChange={setSearch} />
           {folders.length > 1 && (
             <FolderFilter
@@ -152,16 +152,16 @@ export function Dashboard() {
 
       {/* Notes Grid */}
       {loading ? (
-        <div className="py-20 text-center text-sm text-muted-foreground">Loading...</div>
+        <div className="py-16 text-center text-sm text-muted-foreground sm:py-20">Loading...</div>
       ) : filteredNotes.length === 0 ? (
-        <div className="py-20 text-center">
+        <div className="py-16 text-center sm:py-20">
           <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
             {notes.length === 0 ? "No notes yet. Start with a brain dump above!" : "No notes match your search."}
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
             <NoteCard key={note.id} note={note} onDelete={handleDelete} />
           ))}

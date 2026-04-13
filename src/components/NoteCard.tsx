@@ -14,7 +14,7 @@ export function NoteCard({ note, onDelete }: NoteCardProps) {
   });
 
   return (
-    <div className="group flex flex-col rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-surface-hover">
+    <div className="group flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4">
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Folder className="h-3 w-3" />

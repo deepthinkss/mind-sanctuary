@@ -58,28 +58,28 @@ export function NoteInput({ onSave, isProcessing }: NoteInputProps) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border bg-card p-4 shadow-sm">
-        <label className="mb-2 block text-sm font-medium text-muted-foreground">
+      <div className="rounded-lg border bg-card p-3 shadow-sm sm:p-4">
+        <label className="mb-2 block text-xs font-medium text-muted-foreground sm:text-sm">
           What's on your mind?
         </label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Write your thoughts, ideas, or brain dump here..."
-          className="min-h-[140px] w-full resize-none rounded-md border-0 bg-transparent p-0 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
+          className="min-h-[100px] w-full resize-none rounded-md border-0 bg-transparent p-0 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 sm:min-h-[140px] sm:text-base"
           disabled={isProcessing || isSuggesting}
         />
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="hidden text-xs text-muted-foreground sm:block">
             {content.length > 0 ? `${content.length} characters` : "AI will summarize, tag & categorize"}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={handleSuggest}
               disabled={!content.trim() || isSuggesting || isProcessing}
-              className="gap-1.5"
+              className="flex-1 gap-1.5 sm:flex-none"
             >
               {isSuggesting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -91,7 +91,7 @@ export function NoteInput({ onSave, isProcessing }: NoteInputProps) {
             <Button
               onClick={handleSave}
               disabled={!content.trim() || isProcessing}
-              className="gap-2"
+              className="flex-1 gap-2 sm:flex-none"
             >
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -17,6 +17,7 @@ export function Dashboard() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,6 +100,10 @@ export function Dashboard() {
     if (selectedFolder) {
       result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
     }
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().slice(0, 10);
+      result = result.filter((n) => n.created_at.slice(0, 10) === dateStr);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -110,7 +115,7 @@ export function Dashboard() {
       );
     }
     return result;
-  }, [notes, search, selectedFolder]);
+  }, [notes, search, selectedFolder, selectedDate]);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">

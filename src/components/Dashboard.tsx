@@ -86,6 +86,36 @@ export function Dashboard() {
     }
   };
 
+  const handleEdit = async (id: string, content: string) => {
+    try {
+      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", {
+        body: { content },
+      });
+      if (fnError) throw fnError;
+
+      const { data: updated, error: updateError } = await supabase
+        .from("notes")
+        .update({
+          content,
+          summary: aiData?.summary || null,
+          tags: aiData?.tags || [],
+          folder: aiData?.folder || "Uncategorized",
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      toast.success("Note updated & re-processed by AI");
+    } catch (err: any) {
+      console.error("Edit error:", err);
+      toast.error(err.message || "Failed to update note");
+      throw err;
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
@@ -172,7 +202,7 @@ export function Dashboard() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onDelete={handleDelete} />
+            <NoteCard key={note.id} note={note} onDelete={handleDelete} onEdit={handleEdit} />
           ))}
         </div>
       )}

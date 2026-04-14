@@ -4,6 +4,7 @@ import { NoteInput } from "@/components/NoteInput";
 import { NoteCard } from "@/components/NoteCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FolderFilter } from "@/components/FolderFilter";
+import { DateFilter } from "@/components/DateFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Brain, LogOut, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";

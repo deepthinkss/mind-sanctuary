@@ -146,13 +146,16 @@ export function Dashboard() {
       {notes.length > 0 && (
         <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
           <SearchBar value={search} onChange={setSearch} />
-          {folders.length > 1 && (
-            <FolderFilter
-              folders={folders}
-              selected={selectedFolder}
-              onSelect={setSelectedFolder}
-            />
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
+            {folders.length > 1 && (
+              <FolderFilter
+                folders={folders}
+                selected={selectedFolder}
+                onSelect={setSelectedFolder}
+              />
+            )}
+          </div>
         </div>
       )}
 

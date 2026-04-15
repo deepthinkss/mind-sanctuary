@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NoteCardProps {
   note: Tables<"notes">;
@@ -10,14 +16,19 @@ interface NoteCardProps {
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
   onUpdateTags: (id: string, tags: string[]) => void;
+  onRewrite: (id: string, content: string, action: string) => Promise<void>;
+  onGenerateQuestions: (id: string) => Promise<void>;
 }
 
-export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags }: NoteCardProps) {
+export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingTags, setIsEditingTags] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [questions, setQuestions] = useState<string[]>([]);
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -38,6 +49,24 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags }: 
   const handleCancel = () => {
     setEditContent(note.content);
     setIsEditing(false);
+  };
+
+  const handleRewrite = async (action: string) => {
+    setIsRewriting(true);
+    try {
+      await onRewrite(note.id, note.content, action);
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
+    setIsGenerating(true);
+    try {
+      await onGenerateQuestions(note.id);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleAddTag = () => {
@@ -76,29 +105,35 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags }: 
           <span className="text-xs text-muted-foreground">{date}</span>
           {!isEditing && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => onTogglePin(note.id, !note.pinned)}
-                title={note.pinned ? "Unpin" : "Pin"}
-              >
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onTogglePin(note.id, !note.pinned)} title={note.pinned ? "Unpin" : "Pin"}>
                 {note.pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => setIsEditing(true)}
-              >
+
+              {/* Rewrite dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" disabled={isRewriting} title="Rewrite">
+                    {isRewriting ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => handleRewrite("rewrite")}>✨ Improve clarity</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRewrite("expand")}>📝 Expand ideas</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRewrite("simplify")}>🎯 Simplify</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRewrite("professional")}>💼 Professional tone</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleRewrite("casual")}>😊 Casual tone</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Generate questions */}
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleGenerateQuestions} disabled={isGenerating} title="Generate questions">
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <HelpCircle className="h-3 w-3" />}
+              </Button>
+
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-3 w-3" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => onDelete(note.id)}
-              >
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onDelete(note.id)}>
                 <Trash2 className="h-3 w-3" />
               </Button>
             </>
@@ -126,22 +161,31 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags }: 
         </div>
       ) : (
         <>
-          {note.summary && (
-            <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>
-          )}
+          {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 line-clamp-4 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5">
             <ReactMarkdown>{note.content}</ReactMarkdown>
           </div>
         </>
       )}
 
+      {/* AI-generated questions */}
+      {(note as any)._questions && (note as any)._questions.length > 0 && !isEditing && (
+        <div className="mb-3 rounded-md border border-primary/20 bg-primary/5 p-2.5">
+          <p className="mb-1.5 flex items-center gap-1 text-xs font-medium text-primary">
+            <HelpCircle className="h-3 w-3" /> Reflective Questions
+          </p>
+          <ul className="space-y-1">
+            {(note as any)._questions.map((q: string, i: number) => (
+              <li key={i} className="text-xs text-muted-foreground">• {q}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!isEditing && (
         <div className="mt-auto flex flex-wrap items-center gap-1.5">
           {(note.tags || []).map((tag) => (
-            <span
-              key={tag}
-              className="group/tag flex items-center gap-0.5 rounded-full bg-tag-bg px-2 py-0.5 text-xs text-tag-foreground"
-            >
+            <span key={tag} className="group/tag flex items-center gap-0.5 rounded-full bg-tag-bg px-2 py-0.5 text-xs text-tag-foreground">
               {tag}
               {isEditingTags && (
                 <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 rounded-full hover:text-destructive">

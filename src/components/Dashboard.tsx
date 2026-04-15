@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NoteInput } from "@/components/NoteInput";
 import { NoteCard } from "@/components/NoteCard";
@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { FolderFilter } from "@/components/FolderFilter";
 import { DateFilter } from "@/components/DateFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CommandPalette } from "@/components/CommandPalette";
 import { Brain, LogOut, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
@@ -19,6 +20,8 @@ export function Dashboard() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     fetchNotes();
@@ -29,7 +32,6 @@ export function Dashboard() {
       .from("notes")
       .select("*")
       .order("created_at", { ascending: false });
-
     if (error) {
       toast.error("Failed to load notes");
       console.error(error);
@@ -41,32 +43,17 @@ export function Dashboard() {
 
   const handleSave = async (content: string) => {
     setIsProcessing(true);
-
     try {
-      // Get AI processing
-      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", {
-        body: { content },
-      });
-
+      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
       if (fnError) throw fnError;
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
       const { data: note, error: insertError } = await supabase
         .from("notes")
-        .insert({
-          user_id: user.id,
-          content,
-          summary: aiData?.summary || null,
-          tags: aiData?.tags || [],
-          folder: aiData?.folder || "Uncategorized",
-        })
+        .insert({ user_id: user.id, content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
         .select()
         .single();
-
       if (insertError) throw insertError;
-
       setNotes((prev) => [note, ...prev]);
       toast.success("Note saved & organized by AI");
     } catch (err: any) {
@@ -79,34 +66,19 @@ export function Dashboard() {
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("notes").delete().eq("id", id);
-    if (error) {
-      toast.error("Failed to delete note");
-    } else {
-      setNotes((prev) => prev.filter((n) => n.id !== id));
-    }
+    if (error) toast.error("Failed to delete note");
+    else setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
   const handleEdit = async (id: string, content: string) => {
     try {
-      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", {
-        body: { content },
-      });
+      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
       if (fnError) throw fnError;
-
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({
-          content,
-          summary: aiData?.summary || null,
-          tags: aiData?.tags || [],
-          folder: aiData?.folder || "Uncategorized",
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
+        .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
+        .eq("id", id).select().single();
       if (updateError) throw updateError;
-
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
       toast.success("Note updated & re-processed by AI");
     } catch (err: any) {
@@ -116,8 +88,33 @@ export function Dashboard() {
     }
   };
 
+  const handleTogglePin = useCallback(async (id: string, pinned: boolean) => {
+    const { error } = await supabase.from("notes").update({ pinned }).eq("id", id);
+    if (error) {
+      toast.error("Failed to update pin");
+    } else {
+      setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, pinned } : n)));
+      toast.success(pinned ? "Note pinned" : "Note unpinned");
+    }
+  }, []);
+
+  const handleUpdateTags = useCallback(async (id: string, tags: string[]) => {
+    const { error } = await supabase.from("notes").update({ tags }).eq("id", id);
+    if (error) {
+      toast.error("Failed to update tags");
+    } else {
+      setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, tags } : n)));
+    }
+  }, []);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle("dark");
   };
 
   const folders = useMemo(() => {
@@ -127,9 +124,7 @@ export function Dashboard() {
 
   const filteredNotes = useMemo(() => {
     let result = notes;
-    if (selectedFolder) {
-      result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
-    }
+    if (selectedFolder) result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
     if (selectedDate) {
       const dateStr = selectedDate.toISOString().slice(0, 10);
       result = result.filter((n) => n.created_at.slice(0, 10) === dateStr);
@@ -137,25 +132,40 @@ export function Dashboard() {
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
-        (n) =>
-          n.content.toLowerCase().includes(q) ||
-          n.summary?.toLowerCase().includes(q) ||
-          n.tags?.some((t) => t.toLowerCase().includes(q)) ||
-          n.folder?.toLowerCase().includes(q)
+        (n) => n.content.toLowerCase().includes(q) || n.summary?.toLowerCase().includes(q) || n.tags?.some((t) => t.toLowerCase().includes(q)) || n.folder?.toLowerCase().includes(q)
       );
     }
-    return result;
+    // Sort: pinned first, then by created_at desc
+    return result.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }, [notes, search, selectedFolder, selectedDate]);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      {/* Command Palette */}
+      <ClientOnly fallback={null}>
+        <CommandPalette
+          onNewNote={() => noteInputRef.current?.focus()}
+          onFocusSearch={() => searchRef.current?.focus()}
+          onToggleTheme={toggleTheme}
+          onSignOut={handleSignOut}
+          isDark={isDark}
+        />
+      </ClientOnly>
+
       {/* Header */}
       <header className="mb-4 flex items-center justify-between sm:mb-6">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary sm:h-9 sm:w-9">
             <Brain className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
           </div>
-          <h1 className="text-base font-semibold text-foreground sm:text-lg">Knowledge Hub</h1>
+          <div>
+            <h1 className="text-base font-semibold text-foreground sm:text-lg">Knowledge Hub</h1>
+            <p className="hidden text-xs text-muted-foreground sm:block">Press <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> for commands</p>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <ClientOnly fallback={null}>
@@ -169,22 +179,16 @@ export function Dashboard() {
 
       {/* Note Input */}
       <div className="mb-4 sm:mb-6">
-        <NoteInput onSave={handleSave} isProcessing={isProcessing} />
+        <NoteInput onSave={handleSave} isProcessing={isProcessing} textareaRef={noteInputRef} />
       </div>
 
       {/* Search & Filter */}
       {notes.length > 0 && (
         <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
-          <SearchBar value={search} onChange={setSearch} />
+          <SearchBar value={search} onChange={setSearch} inputRef={searchRef} />
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
-            {folders.length > 1 && (
-              <FolderFilter
-                folders={folders}
-                selected={selectedFolder}
-                onSelect={setSelectedFolder}
-              />
-            )}
+            {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
           </div>
         </div>
       )}
@@ -202,7 +206,7 @@ export function Dashboard() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onDelete={handleDelete} onEdit={handleEdit} />
+            <NoteCard key={note.id} note={note} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} />
           ))}
         </div>
       )}

@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           folder: string | null
           id: string
+          pinned: boolean
           summary: string | null
           tags: string[] | null
           updated_at: string
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           folder?: string | null
           id?: string
+          pinned?: boolean
           summary?: string | null
           tags?: string[] | null
           updated_at?: string
@@ -40,6 +42,7 @@ export type Database = {
           created_at?: string
           folder?: string | null
           id?: string
+          pinned?: boolean
           summary?: string | null
           tags?: string[] | null
           updated_at?: string

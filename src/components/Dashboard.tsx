@@ -7,19 +7,25 @@ import { FolderFilter } from "@/components/FolderFilter";
 import { DateFilter } from "@/components/DateFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CommandPalette } from "@/components/CommandPalette";
-import { Brain, LogOut, FileText } from "lucide-react";
+import { TimelineView } from "@/components/TimelineView";
+import { FocusMode } from "@/components/FocusMode";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { ClientOnly } from "@tanstack/react-router";
 
+type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
+
 export function Dashboard() {
-  const [notes, setNotes] = useState<Tables<"notes">[]>([]);
+  const [notes, setNotes] = useState<NoteWithMeta[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "timeline">("grid");
+  const [focusMode, setFocusMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -88,6 +94,44 @@ export function Dashboard() {
     }
   };
 
+  const handleRewrite = useCallback(async (id: string, content: string, action: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("rewrite-note", { body: { content, action } });
+      if (error) throw error;
+      if (!data?.result) throw new Error("No result returned");
+
+      // Update the note with the rewritten content and re-process
+      const { data: aiData } = await supabase.functions.invoke("process-note", { body: { content: data.result } });
+      const { data: updated, error: updateError } = await supabase
+        .from("notes")
+        .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
+        .eq("id", id).select().single();
+      if (updateError) throw updateError;
+
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      toast.success(`Note ${action === "expand" ? "expanded" : action === "simplify" ? "simplified" : "rewritten"} by AI`);
+    } catch (err: any) {
+      console.error("Rewrite error:", err);
+      toast.error(err.message || "Failed to rewrite note");
+    }
+  }, []);
+
+  const handleGenerateQuestions = useCallback(async (id: string) => {
+    try {
+      const note = notes.find((n) => n.id === id);
+      if (!note) return;
+      const { data, error } = await supabase.functions.invoke("generate-questions", { body: { content: note.content } });
+      if (error) throw error;
+      if (!data?.questions) throw new Error("No questions returned");
+
+      setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, _questions: data.questions } : n)));
+      toast.success("Reflective questions generated");
+    } catch (err: any) {
+      console.error("Questions error:", err);
+      toast.error(err.message || "Failed to generate questions");
+    }
+  }, [notes]);
+
   const handleTogglePin = useCallback(async (id: string, pinned: boolean) => {
     const { error } = await supabase.from("notes").update({ pinned }).eq("id", id);
     if (error) {
@@ -135,7 +179,6 @@ export function Dashboard() {
         (n) => n.content.toLowerCase().includes(q) || n.summary?.toLowerCase().includes(q) || n.tags?.some((t) => t.toLowerCase().includes(q)) || n.folder?.toLowerCase().includes(q)
       );
     }
-    // Sort: pinned first, then by created_at desc
     return result.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -156,6 +199,11 @@ export function Dashboard() {
         />
       </ClientOnly>
 
+      {/* Focus Mode */}
+      <ClientOnly fallback={null}>
+        <FocusMode isOpen={focusMode} onClose={() => setFocusMode(false)} onSave={handleSave} isProcessing={isProcessing} />
+      </ClientOnly>
+
       {/* Header */}
       <header className="mb-4 flex items-center justify-between sm:mb-6">
         <div className="flex items-center gap-2">
@@ -168,6 +216,9 @@ export function Dashboard() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setFocusMode(true)} title="Focus Mode">
+            <Focus className="h-4 w-4" />
+          </Button>
           <ClientOnly fallback={null}>
             <ThemeToggle />
           </ClientOnly>
@@ -189,11 +240,31 @@ export function Dashboard() {
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
             {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
+
+            {/* View toggle */}
+            <div className="ml-auto flex items-center rounded-md border bg-muted p-0.5">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid className="h-3 w-3" /> Grid
+              </Button>
+              <Button
+                variant={viewMode === "timeline" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={() => setViewMode("timeline")}
+              >
+                <Clock className="h-3 w-3" /> Timeline
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Notes Grid */}
+      {/* Notes */}
       {loading ? (
         <div className="py-16 text-center text-sm text-muted-foreground sm:py-20">Loading...</div>
       ) : filteredNotes.length === 0 ? (
@@ -203,10 +274,29 @@ export function Dashboard() {
             {notes.length === 0 ? "No notes yet. Start with a brain dump above!" : "No notes match your search."}
           </p>
         </div>
+      ) : viewMode === "timeline" ? (
+        <TimelineView
+          notes={filteredNotes}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+          onTogglePin={handleTogglePin}
+          onUpdateTags={handleUpdateTags}
+          onRewrite={handleRewrite}
+          onGenerateQuestions={handleGenerateQuestions}
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} />
+            <NoteCard
+              key={note.id}
+              note={note}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onTogglePin={handleTogglePin}
+              onUpdateTags={handleUpdateTags}
+              onRewrite={handleRewrite}
+              onGenerateQuestions={handleGenerateQuestions}
+            />
           ))}
         </div>
       )}

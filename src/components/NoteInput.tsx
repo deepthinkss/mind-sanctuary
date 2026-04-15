@@ -12,9 +12,10 @@ interface Suggestion {
 interface NoteInputProps {
   onSave: (content: string) => Promise<void>;
   isProcessing: boolean;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
-export function NoteInput({ onSave, isProcessing }: NoteInputProps) {
+export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps) {
   const [content, setContent] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -63,6 +64,7 @@ export function NoteInput({ onSave, isProcessing }: NoteInputProps) {
           What's on your mind?
         </label>
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Write your thoughts, ideas, or brain dump here..."

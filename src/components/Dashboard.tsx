@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { NoteInput } from "@/components/NoteInput";
 import { NoteCard } from "@/components/NoteCard";
 import { SearchBar } from "@/components/SearchBar";
-import { SemanticSearch } from "@/components/SemanticSearch";
 import { FolderFilter } from "@/components/FolderFilter";
 import { DateFilter } from "@/components/DateFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -30,7 +29,6 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "timeline" | "dashboard" | "clusters">("grid");
   const [focusMode, setFocusMode] = useState(false);
-  const [semanticResults, setSemanticResults] = useState<string[] | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -167,14 +165,6 @@ export function Dashboard() {
   const filteredNotes = useMemo(() => {
     let result: NoteWithMeta[] = notes;
 
-    // Semantic search filter
-    if (semanticResults) {
-      result = result.filter((n) => semanticResults.includes(n.id));
-      // Maintain semantic order
-      result.sort((a, b) => semanticResults.indexOf(a.id) - semanticResults.indexOf(b.id));
-      return result;
-    }
-
     if (selectedFolder) result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
     if (selectedDate) {
       const dateStr = selectedDate.toISOString().slice(0, 10);
@@ -191,7 +181,7 @@ export function Dashboard() {
       if (!a.pinned && b.pinned) return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [notes, search, selectedFolder, selectedDate, semanticResults]);
+  }, [notes, search, selectedFolder, selectedDate]);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -235,7 +225,6 @@ export function Dashboard() {
       {notes.length > 0 && (
         <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
           <SearchBar value={search} onChange={setSearch} inputRef={searchRef} />
-          <SemanticSearch notes={notes} onResults={setSemanticResults} />
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
             {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}

@@ -28,7 +28,7 @@ export function Dashboard() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "timeline" | "dashboard" | "clusters">("grid");
+  const [viewMode, setViewMode] = useState<"todos" | "grid" | "timeline" | "dashboard" | "clusters">("grid");
   const [focusMode, setFocusMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);

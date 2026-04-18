@@ -68,10 +68,10 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── NoteInput.tsx           # Textarea + Smart Save + AI Suggest
 │   │   ├── NoteCard.tsx            # Note card: markdown, pin, tags, AI tools
 │   │   ├── SearchBar.tsx           # Keyword search input
-│   │   ├── SemanticSearch.tsx      # AI meaning-based search
 │   │   ├── FolderFilter.tsx        # Folder pill filter
 │   │   ├── DateFilter.tsx          # Calendar/date filter
 │   │   ├── TimelineView.tsx        # Notes grouped by date
+│   │   ├── TodoList.tsx            # Local-first to-do list view
 │   │   ├── KnowledgeDashboard.tsx  # Insights: activity, tags, folders
 │   │   ├── TopicClusters.tsx       # AI semantic clustering view
 │   │   ├── SecondBrainChat.tsx     # Floating streaming chat with notes

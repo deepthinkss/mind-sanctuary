@@ -12,6 +12,7 @@ import { FocusMode } from "@/components/FocusMode";
 import { SecondBrainChat } from "@/components/SecondBrainChat";
 import { KnowledgeDashboard } from "@/components/KnowledgeDashboard";
 import { TopicClusters } from "@/components/TopicClusters";
+import { TodoList } from "@/components/TodoList";
 import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";

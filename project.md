@@ -88,7 +88,6 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── suggest-notes/          # AI: 3 note suggestions from a topic
 │   │   ├── rewrite-note/           # AI: rewrite/expand/simplify/tone shift
 │   │   ├── generate-questions/     # AI: 3 Socratic reflection questions
-│   │   ├── semantic-search/        # AI: rank notes by meaning
 │   │   ├── cluster-notes/          # AI: group notes into 2–6 topic clusters
 │   │   └── chat-with-notes/        # AI: streaming Second Brain chat
 │   └── migrations/

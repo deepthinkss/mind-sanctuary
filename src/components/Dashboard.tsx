@@ -284,11 +284,6 @@ export function Dashboard() {
       <ClientOnly fallback={null}>
         <SecondBrainChat notes={notes} />
       </ClientOnly>
-
-      {/* To-do List */}
-      <ClientOnly fallback={null}>
-        <TodoList />
-      </ClientOnly>
     </div>
   );
 }

@@ -142,7 +142,6 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 | `suggest-notes`       | `google/gemini-3-flash-preview`    | Tool calling          | 3 `{ title, content }` suggestions         |
 | `rewrite-note`        | `google/gemini-3-flash-preview`    | Plain completion      | Rewritten text (5 action variants)         |
 | `generate-questions`  | `google/gemini-3-flash-preview`    | Tool calling          | 3 reflective questions                     |
-| `semantic-search`     | `google/gemini-3-flash-preview`    | Tool calling          | Ranked note indices                        |
 | `cluster-notes`       | `google/gemini-3-flash-preview`    | Tool calling          | 2–6 clusters with name + description       |
 | `chat-with-notes`     | `google/gemini-3-flash-preview`    | **SSE streaming**     | Conversational answers grounded in notes   |
 

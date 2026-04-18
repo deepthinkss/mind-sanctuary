@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ListTodo, Plus, Trash2, X, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Todo = {
@@ -15,7 +15,6 @@ type Todo = {
 const STORAGE_KEY = "knowledge-hub-todos";
 
 export function TodoList() {
-  const [open, setOpen] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
@@ -68,134 +67,111 @@ export function TodoList() {
   );
 
   const activeCount = todos.filter((t) => !t.done).length;
+  const doneCount = todos.length - activeCount;
 
   return (
-    <>
-      {/* Floating button */}
-      <Button
-        onClick={() => setOpen((o) => !o)}
-        size="icon"
-        className="fixed bottom-6 right-24 z-40 h-12 w-12 rounded-full shadow-lg"
-        title="To-do list"
-      >
-        <ListTodo className="h-5 w-5" />
-        {activeCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-            {activeCount > 99 ? "99+" : activeCount}
+    <div className="mx-auto max-w-2xl rounded-lg border bg-card shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold">My To-do List</h3>
+          <span className="text-xs text-muted-foreground">
+            {activeCount} active · {doneCount} done
           </span>
-        )}
-      </Button>
-
-      {/* Popup */}
-      {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex w-[calc(100vw-3rem)] max-w-sm flex-col rounded-lg border bg-card shadow-xl sm:right-24">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <ListTodo className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold">To-do List</h3>
-              <span className="text-xs text-muted-foreground">
-                {activeCount} active
-              </span>
-            </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Input */}
-          <div className="flex gap-2 border-b p-3">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTodo();
-                }
-              }}
-              placeholder="Add a task..."
-              className="h-9 text-sm"
-            />
-            <Button size="sm" onClick={addTodo} disabled={!input.trim()} className="h-9 px-3">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-1 border-b px-3 py-2">
-            {(["all", "active", "done"] as const).map((f) => (
-              <Button
-                key={f}
-                variant={filter === f ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 px-2 text-xs capitalize"
-                onClick={() => setFilter(f)}
-              >
-                {f}
-              </Button>
-            ))}
-            {todos.some((t) => t.done) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                onClick={clearDone}
-              >
-                Clear done
-              </Button>
-            )}
-          </div>
-
-          {/* List */}
-          <div className="max-h-80 overflow-y-auto p-2">
-            {filtered.length === 0 ? (
-              <div className="py-10 text-center">
-                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
-                <p className="text-xs text-muted-foreground">
-                  {todos.length === 0
-                    ? "No tasks yet. Add one above!"
-                    : filter === "active"
-                    ? "All caught up! 🎉"
-                    : "Nothing here."}
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-1">
-                {filtered.map((todo) => (
-                  <li
-                    key={todo.id}
-                    className="group flex items-start gap-2 rounded-md px-2 py-2 hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      checked={todo.done}
-                      onCheckedChange={() => toggleTodo(todo.id)}
-                      className="mt-0.5"
-                    />
-                    <span
-                      className={cn(
-                        "flex-1 break-words text-sm",
-                        todo.done && "text-muted-foreground line-through"
-                      )}
-                    >
-                      {todo.text}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => deleteTodo(todo.id)}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
-      )}
-    </>
+      </div>
+
+      {/* Input */}
+      <div className="flex gap-2 border-b p-3">
+        <Input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTodo();
+            }
+          }}
+          placeholder="Add a task..."
+          className="h-9 text-sm"
+        />
+        <Button size="sm" onClick={addTodo} disabled={!input.trim()} className="h-9 px-3">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-1 border-b px-3 py-2">
+        {(["all", "active", "done"] as const).map((f) => (
+          <Button
+            key={f}
+            variant={filter === f ? "secondary" : "ghost"}
+            size="sm"
+            className="h-7 px-2 text-xs capitalize"
+            onClick={() => setFilter(f)}
+          >
+            {f}
+          </Button>
+        ))}
+        {doneCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            onClick={clearDone}
+          >
+            Clear done
+          </Button>
+        )}
+      </div>
+
+      {/* List */}
+      <div className="max-h-[60vh] overflow-y-auto p-2">
+        {filtered.length === 0 ? (
+          <div className="py-12 text-center">
+            <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">
+              {todos.length === 0
+                ? "No tasks yet. Add one above!"
+                : filter === "active"
+                ? "All caught up! 🎉"
+                : "Nothing here."}
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-1">
+            {filtered.map((todo) => (
+              <li
+                key={todo.id}
+                className="group flex items-start gap-3 rounded-md px-3 py-2 hover:bg-muted/50"
+              >
+                <Checkbox
+                  checked={todo.done}
+                  onCheckedChange={() => toggleTodo(todo.id)}
+                  className="mt-0.5"
+                />
+                <span
+                  className={cn(
+                    "flex-1 break-words text-sm",
+                    todo.done && "text-muted-foreground line-through"
+                  )}
+                >
+                  {todo.text}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={() => deleteTodo(todo.id)}
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }

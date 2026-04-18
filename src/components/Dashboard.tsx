@@ -255,6 +255,10 @@ export function Dashboard() {
       {/* Content */}
       {loading ? (
         <div className="py-16 text-center text-sm text-muted-foreground sm:py-20">Loading...</div>
+      ) : viewMode === "todos" ? (
+        <ClientOnly fallback={null}>
+          <TodoList />
+        </ClientOnly>
       ) : viewMode === "dashboard" ? (
         <KnowledgeDashboard notes={notes} />
       ) : viewMode === "clusters" ? (

@@ -123,10 +123,14 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 ### Phase 3 — Discovery & Visualization
 
-- **Semantic Search** (`semantic-search`) — AI ranks notes by meaning, not keywords.
 - **Second Brain Chat** (`chat-with-notes`) — floating streaming chat that uses the user's notes as context.
 - **Knowledge Dashboard** (`KnowledgeDashboard.tsx`) — weekly activity bars, tag frequency, folder stats.
 - **Topic Clustering** (`cluster-notes`) — AI groups notes into 2–6 named semantic clusters.
+
+### Phase 4 — Productivity
+
+- **To-do List View** (`TodoList.tsx`) — dedicated view mode (alongside Grid, Timeline, Insights, Clusters) with add/toggle/delete tasks, All/Active/Done filters, and `localStorage` persistence. Replaces the prior floating popup.
+- **Search simplification** — semantic search removed; keyword search via `SearchBar` is the single search path.
 
 ---
 

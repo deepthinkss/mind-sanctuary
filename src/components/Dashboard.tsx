@@ -232,6 +232,9 @@ export function Dashboard() {
 
             {/* View toggle */}
             <div className="ml-auto flex items-center rounded-md border bg-muted p-0.5">
+              <Button variant={viewMode === "todos" ? "default" : "ghost"} size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setViewMode("todos")}>
+                <ListTodo className="h-3 w-3" /> Todos
+              </Button>
               <Button variant={viewMode === "grid" ? "default" : "ghost"} size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setViewMode("grid")}>
                 <LayoutGrid className="h-3 w-3" /> Grid
               </Button>

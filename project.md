@@ -64,7 +64,7 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   └── index.tsx               # Auth gate + Dashboard
 │   ├── components/
 │   │   ├── AuthForm.tsx            # Email/password sign-in & sign-up
-│   │   ├── Dashboard.tsx           # Main view: grid/timeline/insights/clusters
+│   │   ├── Dashboard.tsx           # Main view: grid/timeline/insights/clusters/graph/goals
 │   │   ├── NoteInput.tsx           # Textarea + Smart Save + AI Suggest
 │   │   ├── NoteCard.tsx            # Note card: markdown, pin, tags, AI tools
 │   │   ├── SearchBar.tsx           # Keyword search input
@@ -74,7 +74,9 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── TodoList.tsx            # Local-first to-do list view
 │   │   ├── KnowledgeDashboard.tsx  # Insights: activity, tags, folders
 │   │   ├── TopicClusters.tsx       # AI semantic clustering view
-│   │   ├── SecondBrainChat.tsx     # Floating streaming chat with notes
+│   │   ├── GraphView.tsx           # Force-directed knowledge graph (notes + relations)
+│   │   ├── GoalsView.tsx           # Goals CRUD + AI progress + note linking
+│   │   ├── SecondBrainChat.tsx     # Floating streaming chat (notes + goals context)
 │   │   ├── CommandPalette.tsx      # ⌘K / Ctrl+K quick navigation
 │   │   ├── FocusMode.tsx           # Distraction-free writing mode
 │   │   ├── ThemeToggle.tsx         # Light/dark toggle
@@ -89,7 +91,10 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── rewrite-note/           # AI: rewrite/expand/simplify/tone shift
 │   │   ├── generate-questions/     # AI: 3 Socratic reflection questions
 │   │   ├── cluster-notes/          # AI: group notes into 2–6 topic clusters
-│   │   └── chat-with-notes/        # AI: streaming Second Brain chat
+│   │   ├── link-notes/             # AI: detect related/extends/contradicts relations
+│   │   ├── analyze-goal/           # AI: progress %, gaps, next steps for a goal
+│   │   ├── suggest-goal-notes/     # AI: pick 3–7 notes most relevant to a goal
+│   │   └── chat-with-notes/        # AI: streaming Second Brain chat (notes + goals)
 │   └── migrations/
 └── project.md
 ```
@@ -134,6 +139,26 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 ---
 
+### Phase 5 — Knowledge Graph & Goal-Oriented System
+
+**Knowledge Graph** — notes stop being isolated cards and become a connected graph of ideas.
+
+- New `note_relations` table (`source_note_id`, `target_note_id`, `relation_type` ∈ `related_to|extends|contradicts`, `confidence`, RLS-scoped to the user).
+- New edge function `link-notes` — sends a new note + candidate notes to Gemini and uses tool-calling to return the top 3–5 typed relations with confidence scores.
+- **Auto-linking** — `Dashboard.handleSave` invokes `link-notes` in the background after every save and upserts the relations.
+- **Graph View** (`GraphView.tsx`) — renders notes as nodes and relations as edges using a custom force-directed SVG simulation (no extra deps). Click a node to highlight connections, see a side panel with linked notes, and remove relations. The toolbar action **AI Link Notes** re-runs linking on demand.
+- **Goal overlay** — nodes belonging to any goal are tinted with the primary color so the graph doubles as a goal-progress visualization.
+
+**Goal-Oriented System** — connects notes to user goals and tracks progress intelligently.
+
+- New `goals` table (`title`, `description`, `status` ∈ `active|completed`, RLS) and `goal_notes` junction table.
+- **Goals View** (`GoalsView.tsx`) — create/edit/delete goals, toggle complete, and click a goal to expand a checklist that links/unlinks any note.
+- New edge function `suggest-goal-notes` — on goal creation, Gemini picks the 3–7 most relevant existing notes and they are auto-linked.
+- New edge function `analyze-goal` — on demand, returns `{ progress%, summary, missing_knowledge[], next_steps[] }` rendered with a progress bar, gap badges, and a next-steps list.
+- **Second Brain Chat now includes goals** — `chat-with-notes` accepts a `goals` array and prepends them to the system prompt so answers are aware of what the user is trying to accomplish.
+
+---
+
 ## Edge Functions Reference
 
 | Function              | Model                              | Output mechanism      | Purpose                                    |
@@ -143,7 +168,10 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 | `rewrite-note`        | `google/gemini-3-flash-preview`    | Plain completion      | Rewritten text (5 action variants)         |
 | `generate-questions`  | `google/gemini-3-flash-preview`    | Tool calling          | 3 reflective questions                     |
 | `cluster-notes`       | `google/gemini-3-flash-preview`    | Tool calling          | 2–6 clusters with name + description       |
-| `chat-with-notes`     | `google/gemini-3-flash-preview`    | **SSE streaming**     | Conversational answers grounded in notes   |
+| `link-notes`          | `google/gemini-3-flash-preview`    | Tool calling          | 3–5 typed relations with confidence        |
+| `analyze-goal`        | `google/gemini-3-flash-preview`    | Tool calling          | Progress %, gaps, next steps for a goal    |
+| `suggest-goal-notes`  | `google/gemini-3-flash-preview`    | Tool calling          | 3–7 note IDs most relevant to a goal       |
+| `chat-with-notes`     | `google/gemini-3-flash-preview`    | **SSE streaming**     | Conversational answers (notes + goals)     |
 
 ---
 

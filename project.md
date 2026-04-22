@@ -2,7 +2,7 @@
 
 ## Overview
 
-A modern, minimalist **AI-powered Second Brain** that automatically organizes thoughts into structured, searchable knowledge. Users write "brain dumps" and AI processes them into summaries, tags, folders, semantic clusters, and conversational insights.
+A modern, minimalist **AI-powered Second Brain** that turns scattered thoughts into a connected, goal-aware knowledge system. Users write brain dumps; the AI organizes them into summaries, tags, folders, semantic clusters, **typed relations between notes (knowledge graph)**, and **goal progress with next-step suggestions**.
 
 **Live Preview:** https://id-preview--dea5fc16-0949-43c8-a896-881b4f8a6893.lovable.app
 
@@ -175,6 +175,19 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 ---
 
+## Database Schema
+
+| Table             | Purpose                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `notes`           | Brain-dump content, AI-generated `summary` / `tags` / `folder`, `pinned` flag.           |
+| `note_relations`  | Typed edges between notes: `relation_type` ∈ `related_to`/`extends`/`contradicts` + `confidence`. Unique on (source, target, type). |
+| `goals`           | User goals with `status` ∈ `active`/`completed`.                                         |
+| `goal_notes`      | Many-to-many junction linking notes to goals.                                            |
+
+All tables are RLS-protected — every row is scoped to `auth.uid() = user_id`.
+
+---
+
 ## Data Flow
 
 ```
@@ -182,20 +195,23 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
             │              User in Browser             │
             └───────────────┬─────────────────────────┘
                             │
-        ┌───────────────────┼───────────────────────┐
-        ▼                   ▼                       ▼
-   Smart Save          Semantic / Chat         Cluster / Insights
-        │                   │                       │
-        ▼                   ▼                       ▼
-   process-note      semantic-search /         cluster-notes
-   rewrite-note      chat-with-notes (SSE)
-   generate-questions
-        │                   │                       │
-        └─────────┬─────────┴───────────┬───────────┘
-                  ▼                     ▼
-        Lovable AI Gateway      Supabase notes table
-        google/gemini-3-                (RLS per user)
-        flash-preview
+   ┌────────────┬───────────┼────────────┬─────────────┐
+   ▼            ▼           ▼            ▼             ▼
+Smart Save   Chat       Insights      Graph         Goals
+   │            │           │            │             │
+   ▼            ▼           ▼            ▼             ▼
+process-note  chat-     cluster-     link-notes    suggest-goal-notes
+rewrite-note  with-     notes        (auto on     analyze-goal
+generate-     notes                  every save)
+questions     (SSE,
+              notes+
+              goals)
+   │            │           │            │             │
+   └─────┬──────┴───────────┼────────────┴─────────────┘
+         ▼                  ▼
+  Lovable AI Gateway   Supabase tables (RLS per user)
+  google/gemini-3-     notes · note_relations
+  flash-preview        goals · goal_notes
 ```
 
 ---
@@ -216,5 +232,8 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 - [ ] Daily brain-dump prompt with streak tracking
 - [ ] Drag-and-drop notes between folders
 - [ ] Voice-to-note with Gemini transcription
-- [ ] Realtime multi-device sync
+- [ ] Realtime multi-device sync (notes, relations, goals)
+- [ ] Sync to-do list to the backend (currently `localStorage`)
+- [ ] Weekly AI digest: "You're progressing on X, focus on Y"
+- [ ] Drag-to-create relations directly in the Graph View
 - [ ] Public API / plugin system

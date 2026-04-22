@@ -16,11 +16,19 @@ export function SecondBrainChat({ notes }: SecondBrainChatProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [goals, setGoals] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase.from("goals").select("title,description,status").then(({ data }) => {
+      if (data) setGoals(data);
+    });
+  }, [isOpen]);
 
   const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-with-notes`;
 

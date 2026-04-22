@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
 
@@ -43,6 +44,7 @@ export function SecondBrainChat({ notes }: SecondBrainChatProps) {
         body: JSON.stringify({
           message: msg,
           notes: notes.map((n) => ({ content: n.content, summary: n.summary, tags: n.tags, folder: n.folder })),
+          goals,
           history: messages,
         }),
       });

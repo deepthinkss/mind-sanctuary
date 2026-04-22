@@ -38,7 +38,13 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchNotes();
+    fetchGoalNoteIds();
   }, []);
+
+  const fetchGoalNoteIds = async () => {
+    const { data } = await supabase.from("goal_notes").select("note_id");
+    if (data) setGoalNoteIds(new Set(data.map((d: any) => d.note_id)));
+  };
 
   const fetchNotes = async () => {
     const { data, error } = await supabase
@@ -69,6 +75,28 @@ export function Dashboard() {
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
       toast.success("Note saved & organized by AI");
+
+      // Auto-link new note with existing notes (background)
+      (async () => {
+        try {
+          const others = notes.filter((n) => n.id !== note.id);
+          if (others.length === 0) return;
+          const { data: linkData } = await supabase.functions.invoke("link-notes", {
+            body: { content, notes: others },
+          });
+          const rels = linkData?.relations || [];
+          if (rels.length > 0) {
+            const rows = rels.map((r: any) => ({
+              user_id: user.id,
+              source_note_id: note.id,
+              target_note_id: r.target_note_id,
+              relation_type: r.relation_type,
+              confidence: r.confidence,
+            }));
+            await supabase.from("note_relations").upsert(rows, { onConflict: "source_note_id,target_note_id,relation_type" });
+          }
+        } catch (e) { console.error("auto-link failed:", e); }
+      })();
     } catch (err: any) {
       console.error("Save error:", err);
       toast.error(err.message || "Failed to save note");

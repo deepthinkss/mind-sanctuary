@@ -278,6 +278,12 @@ export function Dashboard() {
               <Button variant={viewMode === "clusters" ? "default" : "ghost"} size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setViewMode("clusters")}>
                 <Network className="h-3 w-3" /> Clusters
               </Button>
+              <Button variant={viewMode === "graph" ? "default" : "ghost"} size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setViewMode("graph")}>
+                <Share2 className="h-3 w-3" /> Graph
+              </Button>
+              <Button variant={viewMode === "goals" ? "default" : "ghost"} size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => setViewMode("goals")}>
+                <Target className="h-3 w-3" /> Goals
+              </Button>
             </div>
           </div>
         </div>
@@ -294,6 +300,10 @@ export function Dashboard() {
         <KnowledgeDashboard notes={notes} />
       ) : viewMode === "clusters" ? (
         <TopicClusters notes={notes} />
+      ) : viewMode === "graph" ? (
+        <GraphView notes={notes} goalNoteIds={goalNoteIds} />
+      ) : viewMode === "goals" ? (
+        <GoalsView notes={notes} />
       ) : filteredNotes.length === 0 ? (
         <div className="py-16 text-center sm:py-20">
           <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />

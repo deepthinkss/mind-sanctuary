@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { message, notes, history } = await req.json();
+    const { message, notes, history, goals } = await req.json();
     if (!message) {
       return new Response(JSON.stringify({ error: "Message is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -26,9 +26,11 @@ serve(async (req) => {
     const messages = [
       {
         role: "system",
-        content: `You are a "Second Brain" assistant. You have access to the user's knowledge base of notes. Answer questions, find connections, suggest ideas, and help the user think based on their notes.
+        content: `You are a "Second Brain" assistant. You have access to the user's knowledge base of notes AND their stated goals. Answer questions, find connections, suggest ideas, and help the user think and progress on their goals.
 
-Be conversational, insightful, and reference specific notes when relevant. If the user asks about something not in their notes, say so and offer to help them create a note about it.
+Be conversational, insightful, and reference specific notes and goals when relevant. If something isn't in their notes, say so and offer to help them create one.
+
+User's Goals:\n${(goals || []).length > 0 ? (goals || []).map((g: any) => `- ${g.title}${g.description ? ` — ${g.description}` : ""} [${g.status}]`).join("\n") : "No active goals."}
 
 User's Notes:\n${notesContext || "No notes yet."}`
       },

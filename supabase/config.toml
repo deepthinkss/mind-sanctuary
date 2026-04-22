@@ -1,1 +1,10 @@
 project_id = "becczjogkusypykgbqca"
+
+[functions.link-notes]
+verify_jwt = false
+
+[functions.analyze-goal]
+verify_jwt = false
+
+[functions.suggest-goal-notes]
+verify_jwt = false

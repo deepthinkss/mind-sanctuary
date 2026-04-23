@@ -54,3 +54,81 @@ All AI operations run securely through **Edge Functions** (never client-side).
 ---
 
 ## 🧱 Project Structure  
+src/
+├── routes/
+├── components/
+├── integrations/
+├── styles.css
+└── router.tsx
+
+supabase/
+├── functions/
+└── migrations/
+
+
+---
+
+## 🔥 Key Features  
+
+### 🟢 Core (MVP)
+- Authentication (Supabase)
+- Smart AI note processing
+- Search + folder filtering
+- Responsive UI with dark mode  
+
+### 🟡 Organization
+- Pin important notes  
+- Markdown support  
+- Tag editing  
+- Command palette (⌘K / Ctrl+K)  
+
+### 🔵 AI Tools
+- Rewrite / Expand notes  
+- Generate questions  
+- Timeline view  
+- Focus mode  
+
+### 🟣 Advanced
+- Second Brain Chat (streaming AI)  
+- Knowledge dashboard  
+- AI-powered clustering  
+
+### ⚡ Productivity
+- Built-in To-Do system  
+- Local storage persistence  
+- Simplified search  
+
+---
+🔄 Data Flow
+User → Edge Functions → AI Gateway → Supabase → UI
+📈 Future Improvements
+Markdown / PDF import-export
+Voice-to-note
+Daily journaling streaks
+Drag & drop organization
+Multi-device sync
+Public API / plugins
+📌 Why This Project?
+
+This project solves a real problem:
+
+👉 People capture ideas… but never organize them.
+
+This system:
+
+Reduces cognitive load
+Improves knowledge recall
+Turns notes into insights
+🧑‍💻 Author
+
+Deep Thakur
+
+⭐ Support
+
+If you like this project:
+
+Star ⭐ the repo
+Fork 🍴 it
+Build something cool 🚀
+
+

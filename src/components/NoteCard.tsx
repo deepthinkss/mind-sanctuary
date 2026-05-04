@@ -182,8 +182,32 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
       ) : (
         <>
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
-          <div className="mb-3 line-clamp-4 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5">
-            <ReactMarkdown>{note.content}</ReactMarkdown>
+          <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
+            <ReactMarkdown
+              components={{
+                code({ inline, className, children, ...props }: any) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  if (inline) {
+                    return (
+                      <code className="rounded bg-muted px-1 py-0.5 text-[0.85em]" {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                  return (
+                    <CodeBlock
+                      language={match?.[1]}
+                      value={String(children)}
+                    />
+                  );
+                },
+                pre({ children }: any) {
+                  return <>{children}</>;
+                },
+              }}
+            >
+              {note.content}
+            </ReactMarkdown>
           </div>
         </>
       )}

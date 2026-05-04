@@ -30,6 +30,7 @@ export function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"todos" | "grid" | "timeline" | "dashboard" | "clusters" | "graph" | "goals">("grid");
   const [goalNoteIds, setGoalNoteIds] = useState<Set<string>>(new Set());

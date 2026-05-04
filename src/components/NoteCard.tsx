@@ -70,7 +70,22 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
     }
   };
 
-  const handleAddTag = () => {
+  const handleExport = () => {
+    const safeTitle = (note.summary || note.content.slice(0, 40))
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "note";
+    const blob = new Blob([note.content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeTitle}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
     const tag = tagInput.trim().toLowerCase();
     if (!tag || (note.tags || []).includes(tag)) {
       setTagInput("");

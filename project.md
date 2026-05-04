@@ -159,6 +159,14 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 ---
 
+### Phase 6 — Developer Productivity
+
+- **Tag filtering & tag cloud** (`TagFilter.tsx`) — multi-select tag chips above the grid that combine with search/folder/date filters. The Insights view also renders a frequency-weighted tag cloud.
+- **Code syntax highlighting** (`CodeBlock.tsx`) — fenced code blocks inside notes are highlighted via `react-syntax-highlighter` (Prism, light/dark theme aware) with a per-block copy-to-clipboard button.
+- **Markdown export** — each note card has a Download (⬇) action that exports the raw markdown content as a `.md` file (browser-side `Blob`, no backend call).
+
+---
+
 ## Edge Functions Reference
 
 | Function              | Model                              | Output mechanism      | Purpose                                    |

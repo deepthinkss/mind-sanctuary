@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
+import { CodeBlock } from "@/components/CodeBlock";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,22 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
     }
   };
 
+  const handleExport = () => {
+    const safeTitle = (note.summary || note.content.slice(0, 40))
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "note";
+    const blob = new Blob([note.content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeTitle}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleAddTag = () => {
     const tag = tagInput.trim().toLowerCase();
     if (!tag || (note.tags || []).includes(tag)) {
@@ -130,6 +147,9 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
                 {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <HelpCircle className="h-3 w-3" />}
               </Button>
 
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleExport} title="Export as markdown">
+                <Download className="h-3 w-3" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-3 w-3" />
               </Button>
@@ -162,8 +182,32 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
       ) : (
         <>
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
-          <div className="mb-3 line-clamp-4 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5">
-            <ReactMarkdown>{note.content}</ReactMarkdown>
+          <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
+            <ReactMarkdown
+              components={{
+                code({ inline, className, children, ...props }: any) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  if (inline) {
+                    return (
+                      <code className="rounded bg-muted px-1 py-0.5 text-[0.85em]" {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                  return (
+                    <CodeBlock
+                      language={match?.[1]}
+                      value={String(children)}
+                    />
+                  );
+                },
+                pre({ children }: any) {
+                  return <>{children}</>;
+                },
+              }}
+            >
+              {note.content}
+            </ReactMarkdown>
           </div>
         </>
       )}

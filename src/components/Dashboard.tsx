@@ -5,6 +5,7 @@ import { NoteCard } from "@/components/NoteCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FolderFilter } from "@/components/FolderFilter";
 import { DateFilter } from "@/components/DateFilter";
+import { TagFilter } from "@/components/TagFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CommandPalette } from "@/components/CommandPalette";
 import { TimelineView } from "@/components/TimelineView";
@@ -29,6 +30,7 @@ export function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"todos" | "grid" | "timeline" | "dashboard" | "clusters" | "graph" | "goals">("grid");
   const [goalNoteIds, setGoalNoteIds] = useState<Set<string>>(new Set());
@@ -194,10 +196,19 @@ export function Dashboard() {
     return Array.from(set).sort();
   }, [notes]);
 
+  const tagStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    notes.forEach((n) => (n.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; }));
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([tag, count]) => ({ tag, count }));
+  }, [notes]);
+
   const filteredNotes = useMemo(() => {
     let result: NoteWithMeta[] = notes;
 
     if (selectedFolder) result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
+    if (selectedTags.length > 0) {
+      result = result.filter((n) => selectedTags.every((t) => (n.tags || []).includes(t)));
+    }
     if (selectedDate) {
       const dateStr = selectedDate.toISOString().slice(0, 10);
       result = result.filter((n) => n.created_at.slice(0, 10) === dateStr);
@@ -213,7 +224,7 @@ export function Dashboard() {
       if (!a.pinned && b.pinned) return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [notes, search, selectedFolder, selectedDate]);
+  }, [notes, search, selectedFolder, selectedDate, selectedTags]);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -286,6 +297,14 @@ export function Dashboard() {
               </Button>
             </div>
           </div>
+          {tagStats.length > 0 && (
+            <TagFilter
+              tags={tagStats}
+              selected={selectedTags}
+              onToggle={(t) => setSelectedTags((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t])}
+              onClear={() => setSelectedTags([])}
+            />
+          )}
         </div>
       )}
 

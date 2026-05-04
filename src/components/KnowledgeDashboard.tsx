@@ -116,6 +116,32 @@ export function KnowledgeDashboard({ notes }: KnowledgeDashboardProps) {
           ))}
         </div>
       </div>
+
+      {/* Tag cloud */}
+      {stats.topTags.length > 0 && (
+        <div className="rounded-lg border bg-card p-3">
+          <h3 className="mb-3 flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <Hash className="h-3 w-3" /> Tag Cloud
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {stats.topTags.map(([tag, count]) => {
+              const max = stats.topTags[0]?.[1] || 1;
+              const size = 0.75 + (count / max) * 1.0; // 0.75rem -> 1.75rem
+              const opacity = 0.5 + (count / max) * 0.5;
+              return (
+                <span
+                  key={tag}
+                  className="font-medium text-primary"
+                  style={{ fontSize: `${size}rem`, opacity }}
+                  title={`${count} note${count === 1 ? "" : "s"}`}
+                >
+                  #{tag}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -86,6 +86,7 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
     URL.revokeObjectURL(url);
   };
 
+  const handleAddTag = () => {
     const tag = tagInput.trim().toLowerCase();
     if (!tag || (note.tags || []).includes(tag)) {
       setTagInput("");

@@ -297,6 +297,14 @@ export function Dashboard() {
               </Button>
             </div>
           </div>
+          {tagStats.length > 0 && (
+            <TagFilter
+              tags={tagStats}
+              selected={selectedTags}
+              onToggle={(t) => setSelectedTags((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t])}
+              onClear={() => setSelectedTags([])}
+            />
+          )}
         </div>
       )}
 

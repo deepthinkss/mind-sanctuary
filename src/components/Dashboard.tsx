@@ -5,6 +5,7 @@ import { NoteCard } from "@/components/NoteCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FolderFilter } from "@/components/FolderFilter";
 import { DateFilter } from "@/components/DateFilter";
+import { TagFilter } from "@/components/TagFilter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CommandPalette } from "@/components/CommandPalette";
 import { TimelineView } from "@/components/TimelineView";

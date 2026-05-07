@@ -62,16 +62,20 @@ export function Dashboard() {
     setLoading(false);
   };
 
-  const handleSave = async (content: string) => {
+  const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
-      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
-      if (fnError) throw fnError;
+      let aiData = ai;
+      if (!aiData) {
+        const { data, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
+        if (fnError) throw fnError;
+        aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const { data: note, error: insertError } = await supabase
         .from("notes")
-        .insert({ user_id: user.id, content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
+        .insert({ user_id: user.id, content, summary: aiData.summary, tags: aiData.tags, folder: aiData.folder || "Uncategorized" })
         .select()
         .single();
       if (insertError) throw insertError;

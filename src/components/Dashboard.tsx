@@ -256,6 +256,9 @@ export function Dashboard() {
             <Focus className="h-4 w-4" />
           </Button>
           <ClientOnly fallback={null}>
+            <HealthStatus />
+          </ClientOnly>
+          <ClientOnly fallback={null}>
             <ThemeToggle />
           </ClientOnly>
           <Button variant="ghost" size="icon" onClick={handleSignOut}>

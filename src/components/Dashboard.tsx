@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { ClientOnly } from "@tanstack/react-router";
+import { HealthStatus } from "@/components/HealthStatus";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 
@@ -254,6 +255,9 @@ export function Dashboard() {
           <Button variant="ghost" size="icon" onClick={() => setFocusMode(true)} title="Focus Mode">
             <Focus className="h-4 w-4" />
           </Button>
+          <ClientOnly fallback={null}>
+            <HealthStatus />
+          </ClientOnly>
           <ClientOnly fallback={null}>
             <ThemeToggle />
           </ClientOnly>

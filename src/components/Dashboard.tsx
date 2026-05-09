@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { ClientOnly } from "@tanstack/react-router";
+import { HealthStatus } from "@/components/HealthStatus";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 

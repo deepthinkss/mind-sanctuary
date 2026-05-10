@@ -102,12 +102,22 @@ export function HealthStatus() {
                   fn.status === "healthy" ? "text-emerald-500" :
                   fn.status === "degraded" ? "text-amber-500" : "text-destructive";
                 return (
-                  <li key={fn.name} className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted">
-                    <FnIcon className={`h-3 w-3 shrink-0 ${fnColor}`} />
-                    <span className="truncate font-mono">{fn.name}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground">
-                      {fn.latencyMs}ms
-                    </span>
+                  <li key={fn.name} className="rounded px-1.5 py-1 text-xs hover:bg-muted">
+                    <div className="flex items-center gap-2">
+                      <FnIcon className={`h-3 w-3 shrink-0 ${fnColor}`} />
+                      <span className="truncate font-mono">{fn.name}</span>
+                      {fn.httpStatus !== undefined && fn.status !== "healthy" && (
+                        <span className="text-[10px] text-muted-foreground">{fn.httpStatus}</span>
+                      )}
+                      <span className="ml-auto text-[10px] text-muted-foreground">
+                        {fn.latencyMs}ms
+                      </span>
+                    </div>
+                    {fn.status !== "healthy" && (fn.error || fn.httpStatus) && (
+                      <p className="mt-0.5 pl-5 text-[10px] leading-snug text-destructive break-words">
+                        {fn.error || `HTTP ${fn.httpStatus}`}
+                      </p>
+                    )}
                   </li>
                 );
               })}

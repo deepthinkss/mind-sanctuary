@@ -171,10 +171,13 @@ export function Dashboard() {
 
   const handleRewrite = useCallback(async (id: string, content: string, action: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("rewrite-note", { body: { content, action } });
-      if (error) throw error;
+      const data = await callAiFn<any>(
+        "rewrite-note",
+        { content, action },
+        (d) => `${action}: ${(d?.result || "").slice(0, 80)}`
+      );
       if (!data?.result) throw new Error("No result returned");
-      const { data: aiData } = await supabase.functions.invoke("process-note", { body: { content: data.result } });
+      const aiData = await callAiFn<any>("process-note", { content: data.result }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
         .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
@@ -186,14 +189,17 @@ export function Dashboard() {
       console.error("Rewrite error:", err);
       toast.error(err.message || "Failed to rewrite note");
     }
-  }, []);
+  }, [callAiFn]);
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
       const note = notes.find((n) => n.id === id);
       if (!note) return;
-      const { data, error } = await supabase.functions.invoke("generate-questions", { body: { content: note.content } });
-      if (error) throw error;
+      const data = await callAiFn<any>(
+        "generate-questions",
+        { content: note.content },
+        (d) => `${(d?.questions || []).length} question(s) generated`
+      );
       if (!data?.questions) throw new Error("No questions returned");
       setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, _questions: data.questions } : n)));
       toast.success("Reflective questions generated");
@@ -201,7 +207,7 @@ export function Dashboard() {
       console.error("Questions error:", err);
       toast.error(err.message || "Failed to generate questions");
     }
-  }, [notes]);
+  }, [notes, callAiFn]);
 
   const handleTogglePin = useCallback(async (id: string, pinned: boolean) => {
     const { error } = await supabase.from("notes").update({ pinned }).eq("id", id);

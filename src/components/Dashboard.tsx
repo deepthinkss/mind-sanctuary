@@ -99,9 +99,10 @@ export function Dashboard() {
     try {
       let aiData = ai;
       if (!aiData) {
-        const { data, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
-        if (fnError) throw fnError;
+        const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
         aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+      } else {
+        recordAiSuccess("process-note", aiData.summary || "Processed note");
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -119,9 +120,11 @@ export function Dashboard() {
         try {
           const others = notes.filter((n) => n.id !== note.id);
           if (others.length === 0) return;
-          const { data: linkData } = await supabase.functions.invoke("link-notes", {
-            body: { content, notes: others },
-          });
+          const linkData = await callAiFn<any>(
+            "link-notes",
+            { content, notes: others },
+            (d) => `Found ${d?.relations?.length || 0} related note(s)`
+          );
           const rels = linkData?.relations || [];
           if (rels.length > 0) {
             const rows = rels.map((r: any) => ({
@@ -151,8 +154,7 @@ export function Dashboard() {
 
   const handleEdit = async (id: string, content: string) => {
     try {
-      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
-      if (fnError) throw fnError;
+      const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
         .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })

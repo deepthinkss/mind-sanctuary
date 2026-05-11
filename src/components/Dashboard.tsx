@@ -39,6 +39,36 @@ export function Dashboard() {
   const [focusMode, setFocusMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
+  const [aiErrors, setAiErrors] = useState<AiErrorMap>({});
+  const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
+
+  const recordAiError = useCallback((fn: string, err: any) => {
+    const message = err?.message || (typeof err === "string" ? err : "Unknown error");
+    setAiErrors((prev) => ({ ...prev, [fn]: { message, at: new Date().toISOString() } }));
+  }, []);
+
+  const recordAiSuccess = useCallback((fn: string, summary: string) => {
+    setAiErrors((prev) => {
+      if (!(fn in prev)) return prev;
+      const next = { ...prev };
+      delete next[fn];
+      return next;
+    });
+    setLastAiSuccess({ fn, summary, at: new Date().toISOString() });
+  }, []);
+
+  const callAiFn = useCallback(
+    async <T,>(fn: string, body: any, summarize: (data: T) => string): Promise<T> => {
+      const { data, error } = await supabase.functions.invoke(fn, { body });
+      if (error) {
+        recordAiError(fn, error);
+        throw error;
+      }
+      try { recordAiSuccess(fn, summarize(data as T)); } catch { /* ignore */ }
+      return data as T;
+    },
+    [recordAiError, recordAiSuccess]
+  );
 
   useEffect(() => {
     fetchNotes();

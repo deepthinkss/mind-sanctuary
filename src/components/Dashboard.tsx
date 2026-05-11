@@ -306,6 +306,14 @@ export function Dashboard() {
         </div>
       </header>
 
+      {/* AI activity (errors + last success) */}
+      <AiActivityBanner
+        errors={aiErrors}
+        lastSuccess={lastAiSuccess}
+        onDismissError={(fn) => setAiErrors((prev) => { const n = { ...prev }; delete n[fn]; return n; })}
+        onDismissSuccess={() => setLastAiSuccess(null)}
+      />
+
       {/* Note Input */}
       <div className="mb-4 sm:mb-6">
         <NoteInput onSave={handleSave} isProcessing={isProcessing} textareaRef={noteInputRef} />

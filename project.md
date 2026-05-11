@@ -96,7 +96,8 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── link-notes/             # AI: detect related/extends/contradicts relations
 │   │   ├── analyze-goal/           # AI: progress %, gaps, next steps for a goal
 │   │   ├── suggest-goal-notes/     # AI: pick 3–7 notes most relevant to a goal
-│   │   └── chat-with-notes/        # AI: streaming Second Brain chat (notes + goals)
+│   │   ├── chat-with-notes/        # AI: streaming Second Brain chat (notes + goals)
+│   │   └── health-check/           # Pings every edge fn, reports status + env
 │   └── migrations/
 └── project.md
 ```

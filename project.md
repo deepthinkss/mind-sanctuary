@@ -167,6 +167,14 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 ---
 
+### Phase 7 — Reliability & Observability
+
+- **Smart Save preview & edit** (`NoteInput.tsx`) — after `process-note` returns, the AI-generated **summary, folder, and tags** are shown in an inline review card. Users can rename the folder, add/remove tags (Enter / comma to add, Backspace to delete the last), or dismiss before committing. Only on **Save note** does the data get persisted, so AI output is always editable before it lands in the DB.
+- **Edge Function health check** (`supabase/functions/health-check/index.ts` + `HealthStatus.tsx`) — a dedicated edge function pings every other function with `OPTIONS` requests in parallel and reports `{ overall, env: { aiKeyConfigured, supabaseUrl }, functions: [{ name, status, httpStatus, latencyMs, error }] }`. The dashboard header shows a live status icon (green/amber/red) with a popover listing per-function latency, HTTP code, and **per-function error messages** when down. Auto-refreshes every 60s. Configured with `verify_jwt = false` in `supabase/config.toml`.
+- **Per-function AI error banner** (`AiActivityBanner.tsx`) — every AI call in `Dashboard.tsx` is routed through a `callAiFn` wrapper that records `{ message, at }` per function name on failure and the **last successful AI summary** on success. A banner above the note input shows current per-function errors (dismissible) alongside the most recent successful result, so a failed `process-note` / `link-notes` / `rewrite-note` / `generate-questions` / `analyze-goal` call never wipes the user's previous successful AI output and always surfaces the specific error message.
+
+
+
 ## Edge Functions Reference
 
 | Function              | Model                              | Output mechanism      | Purpose                                    |

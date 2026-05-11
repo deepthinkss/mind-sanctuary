@@ -80,6 +80,8 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── CommandPalette.tsx      # ⌘K / Ctrl+K quick navigation
 │   │   ├── FocusMode.tsx           # Distraction-free writing mode
 │   │   ├── ThemeToggle.tsx         # Light/dark toggle
+│   │   ├── HealthStatus.tsx        # Edge Function health popover (live status, per-fn errors)
+│   │   ├── AiActivityBanner.tsx    # Per-function AI error + last successful result banner
 │   │   └── ui/                     # shadcn/ui library
 │   ├── integrations/supabase/      # Auto-generated client + types
 │   ├── styles.css                  # Tailwind v4 + OKLCH tokens

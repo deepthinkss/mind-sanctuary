@@ -22,6 +22,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { ClientOnly } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
+import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 
@@ -38,6 +39,36 @@ export function Dashboard() {
   const [focusMode, setFocusMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
+  const [aiErrors, setAiErrors] = useState<AiErrorMap>({});
+  const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
+
+  const recordAiError = useCallback((fn: string, err: any) => {
+    const message = err?.message || (typeof err === "string" ? err : "Unknown error");
+    setAiErrors((prev) => ({ ...prev, [fn]: { message, at: new Date().toISOString() } }));
+  }, []);
+
+  const recordAiSuccess = useCallback((fn: string, summary: string) => {
+    setAiErrors((prev) => {
+      if (!(fn in prev)) return prev;
+      const next = { ...prev };
+      delete next[fn];
+      return next;
+    });
+    setLastAiSuccess({ fn, summary, at: new Date().toISOString() });
+  }, []);
+
+  const callAiFn = useCallback(
+    async <T,>(fn: string, body: any, summarize: (data: T) => string): Promise<T> => {
+      const { data, error } = await supabase.functions.invoke(fn, { body });
+      if (error) {
+        recordAiError(fn, error);
+        throw error;
+      }
+      try { recordAiSuccess(fn, summarize(data as T)); } catch { /* ignore */ }
+      return data as T;
+    },
+    [recordAiError, recordAiSuccess]
+  );
 
   useEffect(() => {
     fetchNotes();
@@ -68,9 +99,10 @@ export function Dashboard() {
     try {
       let aiData = ai;
       if (!aiData) {
-        const { data, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
-        if (fnError) throw fnError;
+        const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
         aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+      } else {
+        recordAiSuccess("process-note", aiData.summary || "Processed note");
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -88,9 +120,11 @@ export function Dashboard() {
         try {
           const others = notes.filter((n) => n.id !== note.id);
           if (others.length === 0) return;
-          const { data: linkData } = await supabase.functions.invoke("link-notes", {
-            body: { content, notes: others },
-          });
+          const linkData = await callAiFn<any>(
+            "link-notes",
+            { content, notes: others },
+            (d) => `Found ${d?.relations?.length || 0} related note(s)`
+          );
           const rels = linkData?.relations || [];
           if (rels.length > 0) {
             const rows = rels.map((r: any) => ({
@@ -120,8 +154,7 @@ export function Dashboard() {
 
   const handleEdit = async (id: string, content: string) => {
     try {
-      const { data: aiData, error: fnError } = await supabase.functions.invoke("process-note", { body: { content } });
-      if (fnError) throw fnError;
+      const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
         .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
@@ -138,10 +171,13 @@ export function Dashboard() {
 
   const handleRewrite = useCallback(async (id: string, content: string, action: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("rewrite-note", { body: { content, action } });
-      if (error) throw error;
+      const data = await callAiFn<any>(
+        "rewrite-note",
+        { content, action },
+        (d) => `${action}: ${(d?.result || "").slice(0, 80)}`
+      );
       if (!data?.result) throw new Error("No result returned");
-      const { data: aiData } = await supabase.functions.invoke("process-note", { body: { content: data.result } });
+      const aiData = await callAiFn<any>("process-note", { content: data.result }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
         .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
@@ -153,14 +189,17 @@ export function Dashboard() {
       console.error("Rewrite error:", err);
       toast.error(err.message || "Failed to rewrite note");
     }
-  }, []);
+  }, [callAiFn]);
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
       const note = notes.find((n) => n.id === id);
       if (!note) return;
-      const { data, error } = await supabase.functions.invoke("generate-questions", { body: { content: note.content } });
-      if (error) throw error;
+      const data = await callAiFn<any>(
+        "generate-questions",
+        { content: note.content },
+        (d) => `${(d?.questions || []).length} question(s) generated`
+      );
       if (!data?.questions) throw new Error("No questions returned");
       setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, _questions: data.questions } : n)));
       toast.success("Reflective questions generated");
@@ -168,7 +207,7 @@ export function Dashboard() {
       console.error("Questions error:", err);
       toast.error(err.message || "Failed to generate questions");
     }
-  }, [notes]);
+  }, [notes, callAiFn]);
 
   const handleTogglePin = useCallback(async (id: string, pinned: boolean) => {
     const { error } = await supabase.from("notes").update({ pinned }).eq("id", id);
@@ -266,6 +305,14 @@ export function Dashboard() {
           </Button>
         </div>
       </header>
+
+      {/* AI activity (errors + last success) */}
+      <AiActivityBanner
+        errors={aiErrors}
+        lastSuccess={lastAiSuccess}
+        onDismissError={(fn) => setAiErrors((prev) => { const n = { ...prev }; delete n[fn]; return n; })}
+        onDismissSuccess={() => setLastAiSuccess(null)}
+      />
 
       {/* Note Input */}
       <div className="mb-4 sm:mb-6">

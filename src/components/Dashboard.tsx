@@ -22,6 +22,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { ClientOnly } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
+import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
+import { NoteHistoryDialog } from "@/components/NoteHistoryDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -150,6 +152,9 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleExport} title="Export as markdown">
                 <Download className="h-3 w-3" />
               </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setShowHistory(true)} title="Version history">
+                <History className="h-3 w-3" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-3 w-3" />
               </Button>
@@ -264,6 +269,13 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
           )}
         </div>
       )}
+
+      <NoteHistoryDialog
+        note={note}
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        onRestore={onEdit}
+      />
     </div>
   );
 }

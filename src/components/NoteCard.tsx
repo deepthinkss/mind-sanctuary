@@ -269,6 +269,13 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
           )}
         </div>
       )}
+
+      <NoteHistoryDialog
+        note={note}
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        onRestore={onEdit}
+      />
     </div>
   );
 }

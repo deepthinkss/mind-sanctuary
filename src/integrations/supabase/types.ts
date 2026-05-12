@@ -128,6 +128,50 @@ export type Database = {
           },
         ]
       }
+      note_versions: {
+        Row: {
+          change_type: string
+          content: string
+          created_at: string
+          folder: string | null
+          id: string
+          note_id: string
+          summary: string | null
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          change_type?: string
+          content: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          note_id: string
+          summary?: string | null
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          change_type?: string
+          content?: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          note_id?: string
+          summary?: string | null
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_versions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           content: string

@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/AuthForm";
 import { Dashboard } from "@/components/Dashboard";
-import { ClientOnly } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
 
 export const Route = createFileRoute("/")({

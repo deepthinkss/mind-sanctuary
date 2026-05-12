@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
+import { NoteHistoryDialog } from "@/components/NoteHistoryDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,

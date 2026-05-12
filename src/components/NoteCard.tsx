@@ -152,6 +152,9 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleExport} title="Export as markdown">
                 <Download className="h-3 w-3" />
               </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setShowHistory(true)} title="Version history">
+                <History className="h-3 w-3" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)}>
                 <Pencil className="h-3 w-3" />
               </Button>

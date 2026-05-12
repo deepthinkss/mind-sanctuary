@@ -31,6 +31,7 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
     month: "short",

@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
-import { Loader2, History, RotateCcw, Folder, Sparkles, Pencil } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, History, RotateCcw, Folder, Sparkles, Pencil, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateFilter } from "@/components/DateFilter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +43,40 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "ai_update" | "edit">("all");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setTypeFilter("all");
+      setDateFilter(undefined);
+    }
+  }, [open]);
+
+  const filteredVersions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return versions.filter((v) => {
+      if (typeFilter !== "all" && v.change_type !== typeFilter) return false;
+      if (dateFilter) {
+        const d = new Date(v.created_at);
+        if (
+          d.getFullYear() !== dateFilter.getFullYear() ||
+          d.getMonth() !== dateFilter.getMonth() ||
+          d.getDate() !== dateFilter.getDate()
+        )
+          return false;
+      }
+      if (q) {
+        const hay = `${v.content} ${v.summary ?? ""} ${v.folder ?? ""} ${(v.tags || []).join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [versions, query, typeFilter, dateFilter]);
+
+  const hasFilters = query.trim() !== "" || typeFilter !== "all" || !!dateFilter;
 
   useEffect(() => {
     if (!open) return;
@@ -98,6 +140,45 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
           <p className="line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">{note.content}</p>
         </div>
 
+        {/* Search + filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[180px] flex-1">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search history..."
+              className="h-9 w-full rounded-md border bg-card pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
+            <SelectTrigger className="h-9 w-[140px] text-sm">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All changes</SelectItem>
+              <SelectItem value="ai_update">AI updates</SelectItem>
+              <SelectItem value="edit">Edits</SelectItem>
+            </SelectContent>
+          </Select>
+          <DateFilter selectedDate={dateFilter} onSelect={setDateFilter} />
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-1 px-2 text-xs"
+              onClick={() => {
+                setQuery("");
+                setTypeFilter("all");
+                setDateFilter(undefined);
+              }}
+            >
+              <X className="h-3 w-3" /> Clear
+            </Button>
+          )}
+        </div>
+
         <ScrollArea className="max-h-[50vh] pr-3">
           {loading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -107,9 +188,13 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
             <div className="py-8 text-center text-sm text-muted-foreground">
               No previous versions yet. Edits and AI updates will appear here.
             </div>
+          ) : filteredVersions.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No versions match your filters.
+            </div>
           ) : (
             <ul className="space-y-2">
-              {versions.map((v) => {
+              {filteredVersions.map((v) => {
                 const isAi = v.change_type === "ai_update";
                 return (
                   <li key={v.id} className="rounded-md border bg-card p-3">

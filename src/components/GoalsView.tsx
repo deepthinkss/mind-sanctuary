@@ -154,13 +154,17 @@ export function GoalsView({ notes }: Props) {
       {goals.length === 0 ? (
         <div className="py-12 text-center text-sm text-muted-foreground">No goals yet. Create one above.</div>
       ) : (
-        <div className="space-y-3">
-          {goals.map((g) => {
+        <div className="grid gap-3 md:grid-cols-2">
+          {goals.map((g, index) => {
             const linked = linkedNotesFor(g.id);
             const analysis = analyses[g.id];
             const isExpanded = activeGoalId === g.id;
             return (
-              <div key={g.id} className="rounded-lg border bg-card p-3">
+              <div
+                key={g.id}
+                className="animate-stagger-slide rounded-lg border bg-card p-4 shadow-sm"
+                style={{ animationDelay: `${Math.min(index * 80, 640)}ms` }}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

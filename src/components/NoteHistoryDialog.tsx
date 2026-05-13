@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
-import { Loader2, History, RotateCcw, Folder, Sparkles, Pencil } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, History, RotateCcw, Folder, Sparkles, Pencil, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateFilter } from "@/components/DateFilter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,

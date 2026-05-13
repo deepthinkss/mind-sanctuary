@@ -70,7 +70,7 @@ export function TodoList() {
   const doneCount = todos.length - activeCount;
 
   return (
-    <div className="mx-auto max-w-2xl rounded-lg border bg-card shadow-sm">
+    <div className="mx-auto w-full max-w-4xl rounded-lg border bg-card shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-3">
@@ -140,11 +140,12 @@ export function TodoList() {
             </p>
           </div>
         ) : (
-          <ul className="space-y-1">
-            {filtered.map((todo) => (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {filtered.map((todo, index) => (
               <li
                 key={todo.id}
-                className="group flex items-start gap-3 rounded-md px-3 py-2 hover:bg-muted/50"
+                className="group flex min-h-20 items-start gap-3 rounded-md border bg-background/70 px-3 py-3 shadow-sm transition-colors hover:bg-muted/50 animate-stagger-slide"
+                style={{ animationDelay: `${Math.min(index * 70, 560)}ms` }}
               >
                 <Checkbox
                   checked={todo.done}

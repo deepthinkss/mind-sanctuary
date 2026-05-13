@@ -368,7 +368,12 @@ export function Dashboard() {
         <div className="py-16 text-center text-sm text-muted-foreground sm:py-20">Loading...</div>
       ) : viewMode === "todos" ? (
         <ClientOnly fallback={null}>
-          <TodoList />
+          <div
+            key="todos-view"
+            className="mx-auto w-full max-w-5xl animate-slide-in-right rounded-xl border bg-card/40 p-4 shadow-sm sm:p-8"
+          >
+            <TodoList />
+          </div>
         </ClientOnly>
       ) : viewMode === "dashboard" ? (
         <KnowledgeDashboard notes={notes} />
@@ -377,7 +382,12 @@ export function Dashboard() {
       ) : viewMode === "graph" ? (
         <GraphView notes={notes} goalNoteIds={goalNoteIds} />
       ) : viewMode === "goals" ? (
-        <GoalsView notes={notes} />
+        <div
+          key="goals-view"
+          className="mx-auto w-full max-w-5xl animate-slide-in-right rounded-xl border bg-card/40 p-4 shadow-sm sm:p-8"
+        >
+          <GoalsView notes={notes} />
+        </div>
       ) : filteredNotes.length === 0 ? (
         <div className="py-16 text-center sm:py-20">
           <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />

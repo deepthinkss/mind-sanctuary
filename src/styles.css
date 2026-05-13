@@ -150,10 +150,25 @@
   from { transform: translateX(-40px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+@keyframes stagger-slide-in {
+  from { transform: translate3d(0, 22px, 0); opacity: 0; }
+  to { transform: translate3d(0, 0, 0); opacity: 1; }
+}
 
 @utility animate-slide-in-right {
   animation: slide-in-right 0.35s ease-out both;
 }
 @utility animate-slide-in-left {
   animation: slide-in-left 0.35s ease-out both;
+}
+@utility animate-stagger-slide {
+  animation: stagger-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-stagger-slide {
+    animation: none;
+  }
 }

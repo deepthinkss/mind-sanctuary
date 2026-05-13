@@ -43,6 +43,40 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "ai_update" | "edit">("all");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setTypeFilter("all");
+      setDateFilter(undefined);
+    }
+  }, [open]);
+
+  const filteredVersions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return versions.filter((v) => {
+      if (typeFilter !== "all" && v.change_type !== typeFilter) return false;
+      if (dateFilter) {
+        const d = new Date(v.created_at);
+        if (
+          d.getFullYear() !== dateFilter.getFullYear() ||
+          d.getMonth() !== dateFilter.getMonth() ||
+          d.getDate() !== dateFilter.getDate()
+        )
+          return false;
+      }
+      if (q) {
+        const hay = `${v.content} ${v.summary ?? ""} ${v.folder ?? ""} ${(v.tags || []).join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [versions, query, typeFilter, dateFilter]);
+
+  const hasFilters = query.trim() !== "" || typeFilter !== "all" || !!dateFilter;
 
   useEffect(() => {
     if (!open) return;

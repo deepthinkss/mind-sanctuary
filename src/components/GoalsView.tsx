@@ -136,7 +136,29 @@ export function GoalsView({ notes }: Props) {
     }
   };
 
-  if (loading) return <div className="py-20 text-center text-sm text-muted-foreground">Loading goals...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-32 animate-pulse rounded-lg border bg-card" />
+        <div className="grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="animate-stagger-slide rounded-lg border bg-card p-4 shadow-sm"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
+                <div className="h-4 flex-1 max-w-[60%] rounded bg-muted animate-pulse" />
+              </div>
+              <div className="mt-3 h-3 w-4/5 rounded bg-muted animate-pulse" />
+              <div className="mt-2 h-3 w-2/3 rounded bg-muted animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -18,6 +18,7 @@ export function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Load from localStorage on mount
@@ -28,6 +29,7 @@ export function TodoList() {
     } catch (e) {
       console.error("Failed to load todos", e);
     }
+    setMounted(true);
   }, []);
 
   // Persist

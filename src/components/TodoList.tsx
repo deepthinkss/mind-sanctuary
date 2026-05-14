@@ -130,7 +130,23 @@ export function TodoList() {
 
       {/* List */}
       <div className="max-h-[60vh] overflow-y-auto p-2">
-        {filtered.length === 0 ? (
+        {!mounted ? (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li
+                key={i}
+                className="flex min-h-20 items-start gap-3 rounded-md border bg-background/70 px-3 py-3 shadow-sm animate-stagger-slide"
+                style={{ animationDelay: `${i * 70}ms` }}
+              >
+                <div className="mt-0.5 h-4 w-4 rounded bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-4/5 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-2/5 rounded bg-muted animate-pulse" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : filtered.length === 0 ? (
           <div className="py-12 text-center">
             <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">

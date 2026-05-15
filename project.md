@@ -258,3 +258,63 @@ questions     (SSE,
 - [ ] Weekly AI digest: "You're progressing on X, focus on Y"
 - [ ] Drag-to-create relations directly in the Graph View
 - [ ] Public API / plugin system
+
+
+Here’s a more detailed and polished version of your roadmap items with clear feature descriptions:
+
+### Product Roadmap
+
+#### ✅ Markdown / PDF Import & Export
+
+Allow users to seamlessly import notes in **Markdown (`.md`) and PDF formats**, making migration from other tools effortless. Export notes, collections, or entire workspaces into **clean Markdown files or shareable PDFs** for backup, collaboration, or offline access. Formatting, headings, links, and embedded content should remain intact during conversion.
+
+#### ✅ Daily Brain-Dump Prompt with Streak Tracking
+
+Introduce a **daily reflection / brain-dump system** that encourages consistent journaling and idea capture. Users receive a simple prompt each day (e.g., *“What’s on your mind today?”* or *“What are you focusing on?”*). Track consistency with **streaks, completion history, and activity insights** to build long-term habits without adding pressure.
+
+#### ✅ Drag-and-Drop Notes Between Folders
+
+Enable a **smooth drag-and-drop interface** for organizing notes. Users can quickly move notes between folders, categories, or projects without opening settings or menus. Include **visual feedback, nested folder support, and instant sync updates** to make workspace organization feel effortless.
+
+#### ✅ Voice-to-Note with Gemini Transcription
+
+Add **voice recording capabilities** so users can instantly convert spoken thoughts into notes using **Gemini-powered transcription**. Support **real-time speech-to-text**, punctuation detection, and automatic formatting for readability. Ideal for quick idea capture, meetings, or hands-free note-taking.
+
+#### ✅ Realtime Multi-Device Sync (Notes, Relations, Goals)
+
+Implement **real-time synchronization across all devices** so updates appear instantly whether users are on desktop, tablet, or mobile. Sync not only notes, but also **graph relations, goals, tags, and workspace structure**, ensuring a consistent experience everywhere with conflict resolution for simultaneous edits.
+
+#### ✅ Sync To-Do List to Backend (Currently `localStorage`)
+
+Move the to-do system from **browser `localStorage` to a secure backend database**, enabling persistence across devices and sessions. This allows **cloud backup, account-level sync, real-time updates, and improved reliability**, preventing task loss when switching browsers or clearing storage.
+
+#### ✅ Weekly AI Digest: *“You’re progressing on X, focus on Y”*
+
+Generate a **personalized weekly AI productivity report** summarizing user activity, learning progress, and focus patterns. The digest can highlight:
+
+* What the user made progress on
+* Areas receiving less attention
+* Suggested priorities for the upcoming week
+* Behavioral insights and productivity trends
+
+Example:
+
+> *“You made strong progress on product design this week. Your goal-planning activity dropped by 30% — consider revisiting roadmap priorities.”*
+
+#### ✅ Drag-to-Create Relations in Graph View
+
+Improve the graph experience by allowing users to **visually create relationships between notes using drag gestures**. Instead of manual linking, users can simply **drag from one node to another** to establish connections. Include **relation labels, previews, and auto-suggestions** for a more intuitive knowledge graph workflow.
+
+#### ✅ Public API / Plugin System
+
+Launch a **developer-friendly API and plugin ecosystem** to extend platform functionality. Users and developers can integrate external tools, automate workflows, and build custom extensions. Potential use cases:
+
+* Calendar & task integrations
+* Custom AI workflows
+* Third-party knowledge sync
+* Community-built plugins and automations
+
+This creates a scalable ecosystem where advanced users can customize the product beyond core functionality.
+
+This version feels more product-ready and investor/changelog-friendly.
+

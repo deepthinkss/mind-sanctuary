@@ -11,41 +11,68 @@ import {
 } from "@/components/ui/popover";
 
 interface DateFilterProps {
+  // Currently selected date
   selectedDate: Date | undefined;
+
+  // Function called when date changes
   onSelect: (date: Date | undefined) => void;
 }
 
-export function DateFilter({ selectedDate, onSelect }: DateFilterProps) {
+export function DateFilter({
+  selectedDate,
+  onSelect,
+}: DateFilterProps) {
+
+  // Controls popover open/close state
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-2">
+
+      {/* Calendar popup wrapper */}
       <Popover open={open} onOpenChange={setOpen}>
+
+        {/* Button that opens the calendar */}
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
               "h-9 justify-start text-left text-sm font-normal",
+
+              // Muted text when no date selected
               !selectedDate && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Filter by date"}
+
+            {/* Show selected date or placeholder */}
+            {selectedDate
+              ? format(selectedDate, "MMM d, yyyy")
+              : "Filter by date"}
           </Button>
         </PopoverTrigger>
+
+        {/* Calendar dropdown */}
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"
             selected={selectedDate}
+
+            // Handle date selection
             onSelect={(date) => {
               onSelect(date);
+
+              // Close calendar after selecting date
               setOpen(false);
             }}
+
             initialFocus
             className={cn("p-3 pointer-events-auto")}
           />
         </PopoverContent>
       </Popover>
+
+      {/* Clear selected date button */}
       {selectedDate && (
         <Button
           variant="ghost"

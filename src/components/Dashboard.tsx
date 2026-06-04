@@ -41,6 +41,15 @@ export function Dashboard() {
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
   const [aiErrors, setAiErrors] = useState<AiErrorMap>({});
   const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  const markProcessing = useCallback((id: string, on: boolean) => {
+    setProcessingIds((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
 
   const recordAiError = useCallback((fn: string, err: any) => {
     const message = err?.message || (typeof err === "string" ? err : "Unknown error");

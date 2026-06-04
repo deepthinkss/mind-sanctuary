@@ -181,6 +181,7 @@ export function Dashboard() {
   };
 
   const handleEdit = async (id: string, content: string) => {
+    markProcessing(id, true);
     try {
       const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
@@ -194,6 +195,8 @@ export function Dashboard() {
       console.error("Edit error:", err);
       toast.error(err.message || "Failed to update note");
       throw err;
+    } finally {
+      markProcessing(id, false);
     }
   };
 

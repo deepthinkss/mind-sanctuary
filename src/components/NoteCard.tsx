@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
@@ -14,6 +14,7 @@ import {
 
 interface NoteCardProps {
   note: Tables<"notes">;
+  isAiProcessing?: boolean;
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
@@ -22,7 +23,7 @@ interface NoteCardProps {
   onGenerateQuestions: (id: string) => Promise<void>;
 }
 
-export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);

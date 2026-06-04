@@ -201,6 +201,7 @@ export function Dashboard() {
   };
 
   const handleRewrite = useCallback(async (id: string, content: string, action: string) => {
+    markProcessing(id, true);
     try {
       const data = await callAiFn<any>(
         "rewrite-note",
@@ -219,8 +220,10 @@ export function Dashboard() {
     } catch (err: any) {
       console.error("Rewrite error:", err);
       toast.error(err.message || "Failed to rewrite note");
+    } finally {
+      markProcessing(id, false);
     }
-  }, [callAiFn]);
+  }, [callAiFn, markProcessing]);
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {

@@ -106,23 +106,42 @@ export function Dashboard() {
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
-      let aiData = ai;
-      if (!aiData) {
-        const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
-        aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
-      } else {
-        recordAiSuccess("process-note", aiData.summary || "Processed note");
-      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Insert immediately so the card shows up; AI fills in summary/tags after.
+      const initial = ai
+        ? { summary: ai.summary, tags: ai.tags, folder: ai.folder || "Uncategorized" }
+        : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
       const { data: note, error: insertError } = await supabase
         .from("notes")
-        .insert({ user_id: user.id, content, summary: aiData.summary, tags: aiData.tags, folder: aiData.folder || "Uncategorized" })
+        .insert({ user_id: user.id, content, ...initial })
         .select()
         .single();
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
-      toast.success("Note saved & organized by AI");
+      if (ai) {
+        recordAiSuccess("process-note", ai.summary || "Processed note");
+        toast.success("Note saved & organized by AI");
+      } else {
+        toast.success("Note saved — organizing with AI…");
+        markProcessing(note.id, true);
+        (async () => {
+          try {
+            const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
+            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+            const { data: updated } = await supabase
+              .from("notes")
+              .update(aiData)
+              .eq("id", note.id).select().single();
+            if (updated) setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+          } catch (e) {
+            console.error("AI organize failed:", e);
+          } finally {
+            markProcessing(note.id, false);
+          }
+        })();
+      }
 
       // Auto-link new note with existing notes (background)
       (async () => {

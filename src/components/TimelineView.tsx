@@ -55,6 +55,7 @@ export function TimelineView({ notes, processingIds, onDelete, onEdit, onToggleP
               <NoteCard
                 key={note.id}
                 note={note}
+                isAiProcessing={processingIds?.has(note.id)}
                 onDelete={onDelete}
                 onEdit={onEdit}
                 onTogglePin={onTogglePin}

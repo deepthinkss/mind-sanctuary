@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
@@ -14,6 +14,7 @@ import {
 
 interface NoteCardProps {
   note: Tables<"notes">;
+  isAiProcessing?: boolean;
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
@@ -22,7 +23,7 @@ interface NoteCardProps {
   onGenerateQuestions: (id: string) => Promise<void>;
 }
 
-export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -186,6 +187,13 @@ export function NoteCard({ note, onDelete, onEdit, onTogglePin, onUpdateTags, on
         </div>
       ) : (
         <>
+          {isAiProcessing && (
+            <div className="mb-2 flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2 py-1 text-xs text-primary">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <Sparkles className="h-3 w-3" />
+              <span>Summarizing & tagging…</span>
+            </div>
+          )}
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
             <ReactMarkdown

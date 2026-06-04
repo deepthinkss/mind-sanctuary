@@ -41,6 +41,15 @@ export function Dashboard() {
   const noteInputRef = useRef<HTMLTextAreaElement>(null);
   const [aiErrors, setAiErrors] = useState<AiErrorMap>({});
   const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  const markProcessing = useCallback((id: string, on: boolean) => {
+    setProcessingIds((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
 
   const recordAiError = useCallback((fn: string, err: any) => {
     const message = err?.message || (typeof err === "string" ? err : "Unknown error");
@@ -97,23 +106,42 @@ export function Dashboard() {
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
-      let aiData = ai;
-      if (!aiData) {
-        const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
-        aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
-      } else {
-        recordAiSuccess("process-note", aiData.summary || "Processed note");
-      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Insert immediately so the card shows up; AI fills in summary/tags after.
+      const initial = ai
+        ? { summary: ai.summary, tags: ai.tags, folder: ai.folder || "Uncategorized" }
+        : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
       const { data: note, error: insertError } = await supabase
         .from("notes")
-        .insert({ user_id: user.id, content, summary: aiData.summary, tags: aiData.tags, folder: aiData.folder || "Uncategorized" })
+        .insert({ user_id: user.id, content, ...initial })
         .select()
         .single();
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
-      toast.success("Note saved & organized by AI");
+      if (ai) {
+        recordAiSuccess("process-note", ai.summary || "Processed note");
+        toast.success("Note saved & organized by AI");
+      } else {
+        toast.success("Note saved — organizing with AI…");
+        markProcessing(note.id, true);
+        (async () => {
+          try {
+            const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
+            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+            const { data: updated } = await supabase
+              .from("notes")
+              .update(aiData)
+              .eq("id", note.id).select().single();
+            if (updated) setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+          } catch (e) {
+            console.error("AI organize failed:", e);
+          } finally {
+            markProcessing(note.id, false);
+          }
+        })();
+      }
 
       // Auto-link new note with existing notes (background)
       (async () => {
@@ -153,6 +181,7 @@ export function Dashboard() {
   };
 
   const handleEdit = async (id: string, content: string) => {
+    markProcessing(id, true);
     try {
       const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
@@ -166,10 +195,13 @@ export function Dashboard() {
       console.error("Edit error:", err);
       toast.error(err.message || "Failed to update note");
       throw err;
+    } finally {
+      markProcessing(id, false);
     }
   };
 
   const handleRewrite = useCallback(async (id: string, content: string, action: string) => {
+    markProcessing(id, true);
     try {
       const data = await callAiFn<any>(
         "rewrite-note",
@@ -188,8 +220,10 @@ export function Dashboard() {
     } catch (err: any) {
       console.error("Rewrite error:", err);
       toast.error(err.message || "Failed to rewrite note");
+    } finally {
+      markProcessing(id, false);
     }
-  }, [callAiFn]);
+  }, [callAiFn, markProcessing]);
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
@@ -396,11 +430,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : viewMode === "timeline" ? (
-        <TimelineView notes={filteredNotes} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
           ))}
         </div>
       )}

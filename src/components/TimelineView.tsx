@@ -5,6 +5,7 @@ import { Calendar } from "lucide-react";
 
 interface TimelineViewProps {
   notes: Tables<"notes">[];
+  processingIds?: Set<string>;
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
@@ -13,7 +14,7 @@ interface TimelineViewProps {
   onGenerateQuestions: (id: string) => Promise<void>;
 }
 
-export function TimelineView({ notes, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: TimelineViewProps) {
+export function TimelineView({ notes, processingIds, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: TimelineViewProps) {
   const grouped = useMemo(() => {
     const map = new Map<string, Tables<"notes">[]>();
     for (const note of notes) {
@@ -54,6 +55,7 @@ export function TimelineView({ notes, onDelete, onEdit, onTogglePin, onUpdateTag
               <NoteCard
                 key={note.id}
                 note={note}
+                isAiProcessing={processingIds?.has(note.id)}
                 onDelete={onDelete}
                 onEdit={onEdit}
                 onTogglePin={onTogglePin}

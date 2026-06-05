@@ -378,6 +378,7 @@ export function Dashboard() {
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
             {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
+            <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
 
             {/* View toggle */}
             <div className="ml-auto flex items-center rounded-md border bg-muted p-0.5">

@@ -282,10 +282,26 @@ export function Dashboard() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([tag, count]) => ({ tag, count }));
   }, [notes]);
 
+  const statusOf = useCallback(
+    (n: NoteWithMeta): Exclude<NoteStatus, "all"> => {
+      if (processingIds.has(n.id)) return "processing";
+      if (n.summary) return "ready";
+      return "failed";
+    },
+    [processingIds]
+  );
+
+  const statusCounts = useMemo(() => {
+    const c = { processing: 0, ready: 0, failed: 0 };
+    notes.forEach((n) => { c[statusOf(n)]++; });
+    return c;
+  }, [notes, statusOf]);
+
   const filteredNotes = useMemo(() => {
     let result: NoteWithMeta[] = notes;
 
     if (selectedFolder) result = result.filter((n) => (n.folder || "Uncategorized") === selectedFolder);
+    if (statusFilter !== "all") result = result.filter((n) => statusOf(n) === statusFilter);
     if (selectedTags.length > 0) {
       result = result.filter((n) => selectedTags.every((t) => (n.tags || []).includes(t)));
     }
@@ -304,7 +320,7 @@ export function Dashboard() {
       if (!a.pinned && b.pinned) return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [notes, search, selectedFolder, selectedDate, selectedTags]);
+  }, [notes, search, selectedFolder, selectedDate, selectedTags, statusFilter, statusOf]);
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">

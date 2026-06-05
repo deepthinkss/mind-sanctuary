@@ -5,6 +5,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
 import { NoteHistoryDialog } from "@/components/NoteHistoryDialog";
+import { AiProgress } from "@/components/AiProgress";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -187,13 +187,7 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
         </div>
       ) : (
         <>
-          {isAiProcessing && (
-            <div className="mb-2 flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2 py-1 text-xs text-primary">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <Sparkles className="h-3 w-3" />
-              <span>Summarizing & tagging…</span>
-            </div>
-          )}
+          {isAiProcessing && <AiProgress active />}
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
             <ReactMarkdown

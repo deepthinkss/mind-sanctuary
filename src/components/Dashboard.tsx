@@ -43,6 +43,7 @@ export function Dashboard() {
   const [aiErrors, setAiErrors] = useState<AiErrorMap>({});
   const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
 
   const markProcessing = useCallback((id: string, on: boolean) => {
     setProcessingIds((prev) => {

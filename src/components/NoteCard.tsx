@@ -22,9 +22,10 @@ interface NoteCardProps {
   onUpdateTags: (id: string, tags: string[]) => void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
+  onRetryProcess?: (id: string) => Promise<void>;
 }
 
-export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);

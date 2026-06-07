@@ -201,15 +201,23 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 gap-1 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                aria-label={isRetrying ? "Retrying…" : "Retry AI processing"}
+                aria-busy={isRetrying}
+                className="h-6 gap-1 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-100"
                 disabled={isRetrying}
                 onClick={async () => {
                   setIsRetrying(true);
                   try { await onRetryProcess(note.id); } finally { setIsRetrying(false); }
                 }}
               >
-                {isRetrying ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
-                Retry
+                {isRetrying ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <RotateCw className="h-3 w-3" />
+                    Retry
+                  </>
+                )}
               </Button>
             </div>
           )}

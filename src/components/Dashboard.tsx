@@ -471,11 +471,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : viewMode === "timeline" ? (
-        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
           ))}
         </div>
       )}

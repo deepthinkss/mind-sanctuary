@@ -33,6 +33,7 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
   const [tagInput, setTagInput] = useState("");
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 

@@ -63,6 +63,7 @@ export function TimelineView({ notes, processingIds, onDelete, onEdit, onToggleP
                 onUpdateTags={onUpdateTags}
                 onRewrite={onRewrite}
                 onGenerateQuestions={onGenerateQuestions}
+                onRetryProcess={onRetryProcess}
               />
             ))}
           </div>

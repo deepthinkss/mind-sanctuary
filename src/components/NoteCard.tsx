@@ -192,6 +192,27 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
       ) : (
         <>
           {isAiProcessing && <AiProgress active />}
+          {!isAiProcessing && !note.summary && onRetryProcess && (
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-xs">
+              <div className="flex items-center gap-1.5 text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                <span className="font-medium">AI summary &amp; tags failed</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={isRetrying}
+                onClick={async () => {
+                  setIsRetrying(true);
+                  try { await onRetryProcess(note.id); } finally { setIsRetrying(false); }
+                }}
+              >
+                {isRetrying ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                Retry
+              </Button>
+            </div>
+          )}
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
             <ReactMarkdown

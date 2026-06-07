@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertTriangle, RotateCw } from "lucide-react";
 import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
@@ -22,9 +23,10 @@ interface NoteCardProps {
   onUpdateTags: (id: string, tags: string[]) => void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
+  onRetryProcess?: (id: string) => Promise<void>;
 }
 
-export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,6 +34,7 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
   const [tagInput, setTagInput] = useState("");
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -189,6 +192,27 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
       ) : (
         <>
           {isAiProcessing && <AiProgress active />}
+          {!isAiProcessing && !note.summary && onRetryProcess && (
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-xs">
+              <div className="flex items-center gap-1.5 text-destructive">
+                <AlertTriangle className="h-3 w-3" />
+                <span className="font-medium">AI summary &amp; tags failed</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={isRetrying}
+                onClick={async () => {
+                  setIsRetrying(true);
+                  try { await onRetryProcess(note.id); } finally { setIsRetrying(false); }
+                }}
+              >
+                {isRetrying ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                Retry
+              </Button>
+            </div>
+          )}
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
             <ReactMarkdown

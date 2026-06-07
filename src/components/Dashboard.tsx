@@ -227,6 +227,28 @@ export function Dashboard() {
     }
   }, [callAiFn, markProcessing]);
 
+  const handleRetryProcess = useCallback(async (id: string) => {
+    const note = notes.find((n) => n.id === id);
+    if (!note) return;
+    markProcessing(id, true);
+    try {
+      const aiData = await callAiFn<any>("process-note", { content: note.content }, (d) => d?.summary || "Processed note");
+      const update = { summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" };
+      const { data: updated, error: updateError } = await supabase
+        .from("notes")
+        .update(update)
+        .eq("id", id).select().single();
+      if (updateError) throw updateError;
+      setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      toast.success("Note re-processed by AI");
+    } catch (err: any) {
+      console.error("Retry error:", err);
+      toast.error(err.message || "Failed to re-process note");
+    } finally {
+      markProcessing(id, false);
+    }
+  }, [notes, callAiFn, markProcessing]);
+
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
       const note = notes.find((n) => n.id === id);
@@ -449,11 +471,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : viewMode === "timeline" ? (
-        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} />
+            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
           ))}
         </div>
       )}

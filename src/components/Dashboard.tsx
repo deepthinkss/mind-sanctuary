@@ -435,6 +435,19 @@ export function Dashboard() {
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
             {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
             <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
+            {statusCounts.failed > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={handleRetryAllFailed}
+                disabled={isRetryingAll}
+                title={`Retry ${statusCounts.failed} failed note${statusCounts.failed === 1 ? "" : "s"}`}
+              >
+                {isRetryingAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                Retry all failed ({statusCounts.failed})
+              </Button>
+            )}
 
             {/* View toggle */}
             <div className="ml-auto flex items-center rounded-md border bg-muted p-0.5">

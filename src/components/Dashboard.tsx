@@ -250,6 +250,39 @@ export function Dashboard() {
     }
   }, [notes, callAiFn, markProcessing]);
 
+  const handleRetryAllFailed = useCallback(async () => {
+    const failed = notes.filter((n) => !n.summary && !processingIds.has(n.id));
+    if (failed.length === 0) {
+      toast.info("No failed notes to retry");
+      return;
+    }
+    setIsRetryingAll(true);
+    toast.info(`Retrying ${failed.length} failed note${failed.length === 1 ? "" : "s"}…`);
+    let ok = 0;
+    let fail = 0;
+    const concurrency = 3;
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < failed.length) {
+        const idx = cursor++;
+        const n = failed[idx];
+        try {
+          await handleRetryProcess(n.id);
+          ok++;
+        } catch {
+          fail++;
+        }
+      }
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(concurrency, failed.length) }, worker));
+      if (fail === 0) toast.success(`Re-processed ${ok} note${ok === 1 ? "" : "s"}`);
+      else toast.warning(`Re-processed ${ok}, ${fail} still failing`);
+    } finally {
+      setIsRetryingAll(false);
+    }
+  }, [notes, processingIds, handleRetryProcess]);
+
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
       const note = notes.find((n) => n.id === id);

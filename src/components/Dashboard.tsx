@@ -17,7 +17,7 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -44,6 +44,7 @@ export function Dashboard() {
   const [lastAiSuccess, setLastAiSuccess] = useState<AiSuccess | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
+  const [isRetryingAll, setIsRetryingAll] = useState(false);
 
   const markProcessing = useCallback((id: string, on: boolean) => {
     setProcessingIds((prev) => {
@@ -249,6 +250,39 @@ export function Dashboard() {
     }
   }, [notes, callAiFn, markProcessing]);
 
+  const handleRetryAllFailed = useCallback(async () => {
+    const failed = notes.filter((n) => !n.summary && !processingIds.has(n.id));
+    if (failed.length === 0) {
+      toast.info("No failed notes to retry");
+      return;
+    }
+    setIsRetryingAll(true);
+    toast.info(`Retrying ${failed.length} failed note${failed.length === 1 ? "" : "s"}…`);
+    let ok = 0;
+    let fail = 0;
+    const concurrency = 3;
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < failed.length) {
+        const idx = cursor++;
+        const n = failed[idx];
+        try {
+          await handleRetryProcess(n.id);
+          ok++;
+        } catch {
+          fail++;
+        }
+      }
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(concurrency, failed.length) }, worker));
+      if (fail === 0) toast.success(`Re-processed ${ok} note${ok === 1 ? "" : "s"}`);
+      else toast.warning(`Re-processed ${ok}, ${fail} still failing`);
+    } finally {
+      setIsRetryingAll(false);
+    }
+  }, [notes, processingIds, handleRetryProcess]);
+
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
       const note = notes.find((n) => n.id === id);
@@ -401,6 +435,19 @@ export function Dashboard() {
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
             {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
             <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
+            {statusCounts.failed > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={handleRetryAllFailed}
+                disabled={isRetryingAll}
+                title={`Retry ${statusCounts.failed} failed note${statusCounts.failed === 1 ? "" : "s"}`}
+              >
+                {isRetryingAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCw className="h-3 w-3" />}
+                Retry all failed ({statusCounts.failed})
+              </Button>
+            )}
 
             {/* View toggle */}
             <div className="ml-auto flex items-center rounded-md border bg-muted p-0.5">

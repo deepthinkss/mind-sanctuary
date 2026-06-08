@@ -388,17 +388,17 @@ export function Dashboard() {
       </ClientOnly>
 
       {/* Header */}
-      <header className="mb-4 flex items-center justify-between sm:mb-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary sm:h-9 sm:w-9">
-            <Brain className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
+      <header className="relative mb-4 flex items-center justify-center sm:mb-6">
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-lg sm:h-14 sm:w-14">
+            <Brain className="h-6 w-6 text-primary-foreground sm:h-7 sm:w-7" />
           </div>
-          <div>
-            <h1 className="text-base font-semibold text-foreground sm:text-lg">Knowledge Hub</h1>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">Knowledge Hub</h1>
             <p className="hidden text-xs text-muted-foreground sm:block">Press <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">⌘K</kbd> for commands</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="absolute right-0 top-0 flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={() => setFocusMode(true)} title="Focus Mode">
             <Focus className="h-4 w-4" />
           </Button>

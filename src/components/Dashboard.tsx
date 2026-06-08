@@ -17,7 +17,7 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";

@@ -17,15 +17,14 @@ serve(async (req) => {
       });
     }
 
-    const AI_API_KEY = Deno.env.get("AI_API_KEY");
-    if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Configure your AI provider's endpoint here
-    const AI_ENDPOINT = Deno.env.get("AI_ENDPOINT") || "https://api.openai.com/v1/chat/completions";
+    const AI_ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

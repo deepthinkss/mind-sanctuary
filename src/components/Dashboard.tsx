@@ -71,13 +71,38 @@ export function Dashboard() {
 
   const callAiFn = useCallback(
     async <T,>(fn: string, body: any, summarize: (data: T) => string): Promise<T> => {
-      const { data, error } = await supabase.functions.invoke(fn, { body });
-      if (error) {
-        recordAiError(fn, error);
-        throw error;
+      const maxAttempts = 3;
+      let lastErr: any = null;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const { data, error } = await supabase.functions.invoke(fn, { body });
+        // Treat in-payload error as failure too (edge fn may return {error} with 200)
+        const payloadErr = !error && data && typeof data === "object" && (data as any).error
+          ? new Error(String((data as any).error))
+          : null;
+        const effErr = error || payloadErr;
+
+        if (!effErr) {
+          try { recordAiSuccess(fn, summarize(data as T)); } catch { /* ignore */ }
+          return data as T;
+        }
+
+        lastErr = effErr;
+        const msg = String(effErr.message || effErr).toLowerCase();
+        const status = (effErr as any)?.context?.status ?? (effErr as any)?.status;
+        const isKeyErr = msg.includes("api_key") || msg.includes("api key") || msg.includes("not configured") || msg.includes("unauthorized") || status === 401;
+        const isTransient = status === 429 || (typeof status === "number" && status >= 500) || msg.includes("ai processing failed") || msg.includes("failed to fetch") || msg.includes("network");
+        const retryable = isKeyErr || isTransient;
+
+        if (!retryable || attempt === maxAttempts) {
+          recordAiError(fn, effErr);
+          throw effErr;
+        }
+        // Exponential backoff with jitter: 600ms, 1500ms
+        const delay = 400 * Math.pow(2, attempt) + Math.floor(Math.random() * 250);
+        console.warn(`[${fn}] attempt ${attempt} failed (${msg}); retrying in ${delay}ms`);
+        await new Promise((r) => setTimeout(r, delay));
       }
-      try { recordAiSuccess(fn, summarize(data as T)); } catch { /* ignore */ }
-      return data as T;
+      throw lastErr;
     },
     [recordAiError, recordAiSuccess]
   );

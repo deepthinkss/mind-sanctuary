@@ -69,7 +69,7 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
       </div>
 
       {/* Writing area */}
-      <div className="flex flex-1 justify-center overflow-auto px-4 py-8 sm:px-8">
+      <div className="relative flex flex-1 justify-center overflow-auto px-4 py-8 sm:px-8">
         <textarea
           ref={textareaRef}
           value={content}

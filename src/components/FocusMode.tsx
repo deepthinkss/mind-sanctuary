@@ -42,17 +42,17 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <SideRays
-          speed={2.5}
-          rayColor1="#EAB308"
-          rayColor2="#96c8ff"
-          intensity={2}
-          spread={2}
+          speed={0.6}
+          rayColor1="#ffffff"
+          rayColor2="#cbd5e1"
+          intensity={0.6}
+          spread={1.2}
           origin="top-right"
           tilt={0}
-          saturation={1.5}
-          blend={0.75}
-          falloff={1.6}
-          opacity={1}
+          saturation={0.3}
+          blend={0.35}
+          falloff={2.2}
+          opacity={0.35}
         />
       </div>
       {/* Minimal header */}

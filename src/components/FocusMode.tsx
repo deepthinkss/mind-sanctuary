@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles, Loader2 } from "lucide-react";
+import SideRays from "./SideRays";
 
 interface FocusModeProps {
   isOpen: boolean;

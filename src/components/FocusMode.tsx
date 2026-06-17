@@ -81,7 +81,7 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t px-4 py-3 sm:px-8">
+      <div className="relative flex items-center justify-between border-t px-4 py-3 sm:px-8">
         <p className="text-xs text-muted-foreground">Press Esc to exit</p>
         <Button
           onClick={handleSave}

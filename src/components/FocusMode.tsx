@@ -40,8 +40,23 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <SideRays
+          speed={2.5}
+          rayColor1="#EAB308"
+          rayColor2="#96c8ff"
+          intensity={2}
+          spread={2}
+          origin="top-right"
+          tilt={0}
+          saturation={1.5}
+          blend={0.75}
+          falloff={1.6}
+          opacity={1}
+        />
+      </div>
       {/* Minimal header */}
-      <div className="flex items-center justify-between border-b px-4 py-3 sm:px-8">
+      <div className="relative flex items-center justify-between border-b px-4 py-3 sm:px-8">
         <span className="text-sm text-muted-foreground">Focus Mode — distraction-free writing</span>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">

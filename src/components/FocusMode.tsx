@@ -40,6 +40,9 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="ambient-glow absolute inset-0" />
+      </div>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <SideRays
           speed={0.6}

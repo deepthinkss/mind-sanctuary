@@ -179,7 +179,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-in-right,
   .animate-slide-in-left,
-  .animate-stagger-slide {
+  .animate-stagger-slide,
+  .ambient-glow {
     animation: none;
   }
 }

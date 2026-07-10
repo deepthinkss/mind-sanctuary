@@ -426,7 +426,21 @@ export function Dashboard() {
   }, [notes, search, selectedFolder, selectedDate, selectedTags, statusFilter, statusOf]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <FolderSidebar
+          notes={notes}
+          selected={selectedFolder}
+          onSelect={setSelectedFolder}
+          onRenameFolder={handleRenameFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onCreateFolder={handleCreateFolder}
+          extraFolders={extraFolders}
+        />
+        <div className="mx-auto min-h-screen w-full max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <div className="mb-2 flex items-center">
+            <SidebarTrigger />
+          </div>
       <ClientOnly fallback={null}>
         <CommandPalette onNewNote={() => noteInputRef.current?.focus()} onFocusSearch={() => searchRef.current?.focus()} onToggleTheme={toggleTheme} onSignOut={handleSignOut} isDark={isDark} />
       </ClientOnly>

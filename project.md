@@ -181,6 +181,11 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 - **Retry UI for failed note processing** — when `process-note` fails, affected `NoteCard`s show a **Retry** button that re-runs `process-note`; the button becomes a disabled spinner while in flight, and a bulk **Retry all failed** action in the grid re-runs every failed note in one batch.
 - **Automatic retry/fallback in `callAiFn`** — all AI calls are wrapped in an exponential-backoff retry loop with jitter (up to 3 attempts) that detects key-related and transient gateway errors (`API_KEY` / `not configured` / `unauthorized` / 401 / 429 / 5xx / network errors). Payload-level errors are also retried. If all attempts fail, the final error is recorded in `AiActivityBanner` so the manual retry UI still takes over.
 
+### Phase 8 — UI/UX Refinement
+
+- **Left sidebar folder management** (`FolderSidebar.tsx`) — replaces the old pill filter with a persistent left sidebar that lists every folder with a note count, supports inline **rename** and **delete** (with confirmation), and has a dedicated **New folder** input. Selecting a folder filters the grid instantly, and deleting a folder moves its notes to `Uncategorized`. The layout is wrapped in `SidebarProvider` with a `SidebarTrigger` for responsive collapse.
+- **Atmospheric focus mode** (`FocusMode.tsx` + `SideRays.tsx`) — the full-screen writing surface now has a minimal, slow-moving ambient background: a custom `SideRays` WebGL/canvas-style ray animation (toned-down speed, desaturated white/ slate colors, low opacity and blend) plus a subtle `ambient-glow` radial pulse behind the content. The effect is purely decorative and obeys `prefers-reduced-motion`.
+
 
 
 ## Edge Functions Reference

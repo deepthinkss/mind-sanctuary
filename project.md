@@ -68,7 +68,7 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── NoteInput.tsx           # Textarea + Smart Save + AI Suggest
 │   │   ├── NoteCard.tsx            # Note card: markdown, pin, tags, AI tools
 │   │   ├── SearchBar.tsx           # Keyword search input
-│   │   ├── FolderFilter.tsx        # Folder pill filter
+│   │   ├── FolderSidebar.tsx       # Left sidebar: folder list, create, rename, delete
 │   │   ├── DateFilter.tsx          # Calendar/date filter
 │   │   ├── TimelineView.tsx        # Notes grouped by date
 │   │   ├── TodoList.tsx            # Local-first to-do list view
@@ -79,6 +79,7 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── SecondBrainChat.tsx     # Floating streaming chat (notes + goals context)
 │   │   ├── CommandPalette.tsx      # ⌘K / Ctrl+K quick navigation
 │   │   ├── FocusMode.tsx           # Distraction-free writing mode
+│   │   ├── SideRays.tsx            # Atmospheric animated ray background for focus mode
 │   │   ├── ThemeToggle.tsx         # Light/dark toggle
 │   │   ├── HealthStatus.tsx        # Edge Function health popover (live status, per-fn errors)
 │   │   ├── AiActivityBanner.tsx    # Per-function AI error + last successful result banner

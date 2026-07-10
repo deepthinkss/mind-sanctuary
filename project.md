@@ -68,7 +68,7 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── NoteInput.tsx           # Textarea + Smart Save + AI Suggest
 │   │   ├── NoteCard.tsx            # Note card: markdown, pin, tags, AI tools
 │   │   ├── SearchBar.tsx           # Keyword search input
-│   │   ├── FolderFilter.tsx        # Folder pill filter
+│   │   ├── FolderSidebar.tsx       # Left sidebar: folder list, create, rename, delete
 │   │   ├── DateFilter.tsx          # Calendar/date filter
 │   │   ├── TimelineView.tsx        # Notes grouped by date
 │   │   ├── TodoList.tsx            # Local-first to-do list view
@@ -79,6 +79,7 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── SecondBrainChat.tsx     # Floating streaming chat (notes + goals context)
 │   │   ├── CommandPalette.tsx      # ⌘K / Ctrl+K quick navigation
 │   │   ├── FocusMode.tsx           # Distraction-free writing mode
+│   │   ├── SideRays.tsx            # Atmospheric animated ray background for focus mode
 │   │   ├── ThemeToggle.tsx         # Light/dark toggle
 │   │   ├── HealthStatus.tsx        # Edge Function health popover (live status, per-fn errors)
 │   │   ├── AiActivityBanner.tsx    # Per-function AI error + last successful result banner
@@ -179,6 +180,11 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 - **Client-only home route fix** (`src/routes/index.tsx`) — replaced the unavailable `ClientOnly` import from `@tanstack/react-router` with a local `mounted` gate so the Supabase auth bootstrap only runs in the browser without breaking the dynamic route module load.
 - **Retry UI for failed note processing** — when `process-note` fails, affected `NoteCard`s show a **Retry** button that re-runs `process-note`; the button becomes a disabled spinner while in flight, and a bulk **Retry all failed** action in the grid re-runs every failed note in one batch.
 - **Automatic retry/fallback in `callAiFn`** — all AI calls are wrapped in an exponential-backoff retry loop with jitter (up to 3 attempts) that detects key-related and transient gateway errors (`API_KEY` / `not configured` / `unauthorized` / 401 / 429 / 5xx / network errors). Payload-level errors are also retried. If all attempts fail, the final error is recorded in `AiActivityBanner` so the manual retry UI still takes over.
+
+### Phase 8 — UI/UX Refinement
+
+- **Left sidebar folder management** (`FolderSidebar.tsx`) — replaces the old pill filter with a persistent left sidebar that lists every folder with a note count, supports inline **rename** and **delete** (with confirmation), and has a dedicated **New folder** input. Selecting a folder filters the grid instantly, and deleting a folder moves its notes to `Uncategorized`. The layout is wrapped in `SidebarProvider` with a `SidebarTrigger` for responsive collapse.
+- **Atmospheric focus mode** (`FocusMode.tsx` + `SideRays.tsx`) — the full-screen writing surface now has a minimal, slow-moving ambient background: a custom `SideRays` WebGL/canvas-style ray animation (toned-down speed, desaturated white/ slate colors, low opacity and blend) plus a subtle `ambient-glow` radial pulse behind the content. The effect is purely decorative and obeys `prefers-reduced-motion`.
 
 
 

@@ -596,10 +596,12 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Second Brain Chat */}
-      <ClientOnly fallback={null}>
-        <SecondBrainChat notes={notes} />
-      </ClientOnly>
-    </div>
+          {/* Second Brain Chat */}
+          <ClientOnly fallback={null}>
+            <SecondBrainChat notes={notes} />
+          </ClientOnly>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

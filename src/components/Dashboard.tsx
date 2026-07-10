@@ -46,6 +46,27 @@ export function Dashboard() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
   const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [extraFolders, setExtraFolders] = useState<string[]>([]);
+
+  const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
+    const { error } = await supabase.from("notes").update({ folder: newName }).eq("folder", oldName);
+    if (error) { toast.error("Failed to rename folder"); return; }
+    setNotes((prev) => prev.map((n) => (n.folder === oldName ? { ...n, folder: newName } : n)));
+    setExtraFolders((prev) => prev.map((f) => (f === oldName ? newName : f)));
+    toast.success(`Renamed to "${newName}"`);
+  }, []);
+
+  const handleDeleteFolder = useCallback(async (name: string) => {
+    const { error } = await supabase.from("notes").update({ folder: "Uncategorized" }).eq("folder", name);
+    if (error) { toast.error("Failed to delete folder"); return; }
+    setNotes((prev) => prev.map((n) => (n.folder === name ? { ...n, folder: "Uncategorized" } : n)));
+    setExtraFolders((prev) => prev.filter((f) => f !== name));
+    toast.success(`Folder "${name}" removed`);
+  }, []);
+
+  const handleCreateFolder = useCallback((name: string) => {
+    setExtraFolders((prev) => (prev.includes(name) ? prev : [...prev, name]));
+  }, []);
 
   const markProcessing = useCallback((id: string, on: boolean) => {
     setProcessingIds((prev) => {

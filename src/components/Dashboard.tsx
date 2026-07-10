@@ -459,7 +459,15 @@ export function Dashboard() {
           <SearchBar value={search} onChange={setSearch} inputRef={searchRef} />
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
-            {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
+            {folders.length > 1 && selectedFolder && (
+              <button
+                onClick={() => setSelectedFolder(null)}
+                className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+                title="Clear folder filter"
+              >
+                {selectedFolder} ✕
+              </button>
+            )}
             <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
             {statusCounts.failed > 0 && (
               <Button

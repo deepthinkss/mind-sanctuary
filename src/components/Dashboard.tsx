@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { NoteInput } from "@/components/NoteInput";
 import { NoteCard } from "@/components/NoteCard";
 import { SearchBar } from "@/components/SearchBar";
-import { FolderFilter } from "@/components/FolderFilter";
+import { FolderSidebar } from "@/components/FolderSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { StatusFilter, type NoteStatus } from "@/components/StatusFilter";
 import { DateFilter } from "@/components/DateFilter";
 import { TagFilter } from "@/components/TagFilter";
@@ -45,6 +46,27 @@ export function Dashboard() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
   const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [extraFolders, setExtraFolders] = useState<string[]>([]);
+
+  const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
+    const { error } = await supabase.from("notes").update({ folder: newName }).eq("folder", oldName);
+    if (error) { toast.error("Failed to rename folder"); return; }
+    setNotes((prev) => prev.map((n) => (n.folder === oldName ? { ...n, folder: newName } : n)));
+    setExtraFolders((prev) => prev.map((f) => (f === oldName ? newName : f)));
+    toast.success(`Renamed to "${newName}"`);
+  }, []);
+
+  const handleDeleteFolder = useCallback(async (name: string) => {
+    const { error } = await supabase.from("notes").update({ folder: "Uncategorized" }).eq("folder", name);
+    if (error) { toast.error("Failed to delete folder"); return; }
+    setNotes((prev) => prev.map((n) => (n.folder === name ? { ...n, folder: "Uncategorized" } : n)));
+    setExtraFolders((prev) => prev.filter((f) => f !== name));
+    toast.success(`Folder "${name}" removed`);
+  }, []);
+
+  const handleCreateFolder = useCallback((name: string) => {
+    setExtraFolders((prev) => (prev.includes(name) ? prev : [...prev, name]));
+  }, []);
 
   const markProcessing = useCallback((id: string, on: boolean) => {
     setProcessingIds((prev) => {
@@ -404,7 +426,21 @@ export function Dashboard() {
   }, [notes, search, selectedFolder, selectedDate, selectedTags, statusFilter, statusOf]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <FolderSidebar
+          notes={notes}
+          selected={selectedFolder}
+          onSelect={setSelectedFolder}
+          onRenameFolder={handleRenameFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onCreateFolder={handleCreateFolder}
+          extraFolders={extraFolders}
+        />
+        <div className="mx-auto min-h-screen w-full max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <div className="mb-2 flex items-center">
+            <SidebarTrigger />
+          </div>
       <ClientOnly fallback={null}>
         <CommandPalette onNewNote={() => noteInputRef.current?.focus()} onFocusSearch={() => searchRef.current?.focus()} onToggleTheme={toggleTheme} onSignOut={handleSignOut} isDark={isDark} />
       </ClientOnly>
@@ -458,7 +494,15 @@ export function Dashboard() {
           <SearchBar value={search} onChange={setSearch} inputRef={searchRef} />
           <div className="flex flex-wrap items-center gap-2">
             <DateFilter selectedDate={selectedDate} onSelect={setSelectedDate} />
-            {folders.length > 1 && <FolderFilter folders={folders} selected={selectedFolder} onSelect={setSelectedFolder} />}
+            {folders.length > 1 && selectedFolder && (
+              <button
+                onClick={() => setSelectedFolder(null)}
+                className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+                title="Clear folder filter"
+              >
+                {selectedFolder} ✕
+              </button>
+            )}
             <StatusFilter selected={statusFilter} counts={statusCounts} onSelect={setStatusFilter} />
             {statusCounts.failed > 0 && (
               <Button
@@ -552,10 +596,12 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Second Brain Chat */}
-      <ClientOnly fallback={null}>
-        <SecondBrainChat notes={notes} />
-      </ClientOnly>
-    </div>
+          {/* Second Brain Chat */}
+          <ClientOnly fallback={null}>
+            <SecondBrainChat notes={notes} />
+          </ClientOnly>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

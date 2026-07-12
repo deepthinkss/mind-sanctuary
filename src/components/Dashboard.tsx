@@ -170,9 +170,22 @@ export function Dashboard() {
         .single();
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
+
+      const applyAiFolder = (folder: string) => {
+        const f = folder || "Uncategorized";
+        setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
+        setSelectedFolder((current) => {
+          if (current === null) return null; // "All notes" — no switch needed
+          if (current === f) return current;
+          toast.info(`Switched to "${f}" folder`);
+          return f;
+        });
+      };
+
       if (ai) {
         recordAiSuccess("process-note", ai.summary || "Processed note");
         toast.success("Note saved & organized by AI");
+        applyAiFolder(initial.folder);
       } else {
         toast.success("Note saved — organizing with AI…");
         markProcessing(note.id, true);
@@ -184,7 +197,10 @@ export function Dashboard() {
               .from("notes")
               .update(aiData)
               .eq("id", note.id).select().single();
-            if (updated) setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+            if (updated) {
+              setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+              applyAiFolder(updated.folder || "Uncategorized");
+            }
           } catch (e) {
             console.error("AI organize failed:", e);
           } finally {

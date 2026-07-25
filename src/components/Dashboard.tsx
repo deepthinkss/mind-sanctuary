@@ -308,6 +308,7 @@ export function Dashboard() {
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      applyAiFolder(updated.folder || "Uncategorized");
       toast.success("Note re-processed by AI");
     } catch (err: any) {
       console.error("Retry error:", err);

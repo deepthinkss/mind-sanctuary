@@ -182,18 +182,9 @@ export function Dashboard() {
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
 
-      const applyAiFolder = (folder: string) => {
-        const f = folder || "Uncategorized";
-        setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
-        setSelectedFolder((current) => {
-          if (current === null) return null; // "All notes" — no switch needed
-          if (current === f) return current;
-          toast.info(`Switched to "${f}" folder`);
-          return f;
-        });
-      };
 
       if (ai) {
+
         recordAiSuccess("process-note", ai.summary || "Processed note");
         toast.success("Note saved & organized by AI");
         applyAiFolder(initial.folder);

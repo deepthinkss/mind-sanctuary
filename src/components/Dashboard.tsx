@@ -293,7 +293,7 @@ export function Dashboard() {
     } finally {
       markProcessing(id, false);
     }
-  }, [callAiFn, markProcessing]);
+  }, [callAiFn, markProcessing, applyAiFolder]);
 
   const handleRetryProcess = useCallback(async (id: string) => {
     const note = notes.find((n) => n.id === id);

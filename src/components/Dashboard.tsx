@@ -285,6 +285,7 @@ export function Dashboard() {
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      applyAiFolder(updated.folder || "Uncategorized");
       toast.success(`Note ${action === "expand" ? "expanded" : action === "simplify" ? "simplified" : "rewritten"} by AI`);
     } catch (err: any) {
       console.error("Rewrite error:", err);

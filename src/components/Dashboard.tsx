@@ -153,6 +153,17 @@ export function Dashboard() {
     setLoading(false);
   };
 
+  const applyAiFolder = useCallback((folder: string) => {
+    const f = folder || "Uncategorized";
+    setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
+    setSelectedFolder((current) => {
+      if (current === null) return null;
+      if (current === f) return current;
+      toast.info(`Switched to "${f}" folder`);
+      return f;
+    });
+  }, []);
+
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
@@ -171,18 +182,9 @@ export function Dashboard() {
       if (insertError) throw insertError;
       setNotes((prev) => [note, ...prev]);
 
-      const applyAiFolder = (folder: string) => {
-        const f = folder || "Uncategorized";
-        setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
-        setSelectedFolder((current) => {
-          if (current === null) return null; // "All notes" — no switch needed
-          if (current === f) return current;
-          toast.info(`Switched to "${f}" folder`);
-          return f;
-        });
-      };
 
       if (ai) {
+
         recordAiSuccess("process-note", ai.summary || "Processed note");
         toast.success("Note saved & organized by AI");
         applyAiFolder(initial.folder);
@@ -256,6 +258,7 @@ export function Dashboard() {
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      applyAiFolder(updated.folder || "Uncategorized");
       toast.success("Note updated & re-processed by AI");
     } catch (err: any) {
       console.error("Edit error:", err);
@@ -282,6 +285,7 @@ export function Dashboard() {
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      applyAiFolder(updated.folder || "Uncategorized");
       toast.success(`Note ${action === "expand" ? "expanded" : action === "simplify" ? "simplified" : "rewritten"} by AI`);
     } catch (err: any) {
       console.error("Rewrite error:", err);
@@ -289,7 +293,7 @@ export function Dashboard() {
     } finally {
       markProcessing(id, false);
     }
-  }, [callAiFn, markProcessing]);
+  }, [callAiFn, markProcessing, applyAiFolder]);
 
   const handleRetryProcess = useCallback(async (id: string) => {
     const note = notes.find((n) => n.id === id);
@@ -304,6 +308,7 @@ export function Dashboard() {
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+      applyAiFolder(updated.folder || "Uncategorized");
       toast.success("Note re-processed by AI");
     } catch (err: any) {
       console.error("Retry error:", err);

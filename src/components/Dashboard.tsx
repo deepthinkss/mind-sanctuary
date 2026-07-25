@@ -153,6 +153,17 @@ export function Dashboard() {
     setLoading(false);
   };
 
+  const applyAiFolder = useCallback((folder: string) => {
+    const f = folder || "Uncategorized";
+    setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
+    setSelectedFolder((current) => {
+      if (current === null) return null;
+      if (current === f) return current;
+      toast.info(`Switched to "${f}" folder`);
+      return f;
+    });
+  }, []);
+
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {

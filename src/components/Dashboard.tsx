@@ -300,23 +300,32 @@ export function Dashboard() {
     if (!note) return;
     markProcessing(id, true);
     try {
-      const aiData = await callAiFn<any>("process-note", { content: note.content }, (d) => d?.summary || "Processed note");
-      const update = { summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" };
+      // Smart retry: regenerate summary + tags only. Never touch note.content.
+      // Preserve the user's existing folder if they already have one; otherwise
+      // adopt the AI's suggestion so uncategorized notes still get filed.
+      const aiData = await callAiFn<any>("process-note", { content: note.content }, (d) => d?.summary || "Regenerated summary & tags");
+      const keepFolder = note.folder && note.folder !== "Uncategorized";
+      const update: { summary: string | null; tags: string[]; folder?: string } = {
+        summary: aiData?.summary || null,
+        tags: aiData?.tags || [],
+      };
+      if (!keepFolder && aiData?.folder) update.folder = aiData.folder;
+
       const { data: updated, error: updateError } = await supabase
         .from("notes")
         .update(update)
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
-      applyAiFolder(updated.folder || "Uncategorized");
-      toast.success("Note re-processed by AI");
+      if (!keepFolder) applyAiFolder(updated.folder || "Uncategorized");
+      toast.success("Summary & tags regenerated");
     } catch (err: any) {
       console.error("Retry error:", err);
-      toast.error(err.message || "Failed to re-process note");
+      toast.error(err.message || "Failed to regenerate summary & tags");
     } finally {
       markProcessing(id, false);
     }
-  }, [notes, callAiFn, markProcessing]);
+  }, [notes, callAiFn, markProcessing, applyAiFolder]);
 
   const handleRetryAllFailed = useCallback(async () => {
     const failed = notes.filter((n) => !n.summary && !processingIds.has(n.id));

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, RotateCw } from "lucide-react";
-import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles } from "lucide-react";
+import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles, AlertTriangle, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
@@ -117,8 +116,10 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
     }
   };
 
+  const isLocked = isRetrying || isAiProcessing;
+
   return (
-    <div className={`group flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""}`}>
+    <div className={`group relative flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""} ${isLocked ? "pointer-events-none opacity-70" : ""}`}>
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Folder className="h-3 w-3" />
@@ -129,14 +130,14 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
           <span className="text-xs text-muted-foreground">{date}</span>
           {!isEditing && (
             <>
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onTogglePin(note.id, !note.pinned)} title={note.pinned ? "Unpin" : "Pin"}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onTogglePin(note.id, !note.pinned)} title={note.pinned ? "Unpin" : "Pin"} disabled={isLocked}>
                 {note.pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
               </Button>
 
               {/* Rewrite dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" disabled={isRewriting} title="Rewrite">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" disabled={isLocked || isRewriting} title="Rewrite">
                     {isRewriting ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                   </Button>
                 </DropdownMenuTrigger>
@@ -150,20 +151,20 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
               </DropdownMenu>
 
               {/* Generate questions */}
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleGenerateQuestions} disabled={isGenerating} title="Generate questions">
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleGenerateQuestions} disabled={isLocked || isGenerating} title="Generate questions">
                 {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <HelpCircle className="h-3 w-3" />}
               </Button>
 
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleExport} title="Export as markdown">
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={handleExport} title="Export as markdown" disabled={isLocked}>
                 <Download className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setShowHistory(true)} title="Version history">
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setShowHistory(true)} title="Version history" disabled={isLocked}>
                 <History className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setIsEditing(true)} disabled={isLocked}>
                 <Pencil className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onDelete(note.id)}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => onDelete(note.id)} disabled={isLocked}>
                 <Trash2 className="h-3 w-3" />
               </Button>
             </>
@@ -193,17 +194,20 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
         <>
           {isAiProcessing && <AiProgress active />}
           {!isAiProcessing && !note.summary && onRetryProcess && (
-            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-xs">
-              <div className="flex items-center gap-1.5 text-destructive">
-                <AlertTriangle className="h-3 w-3" />
-                <span className="font-medium">AI summary &amp; tags failed</span>
+            <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
+              <div className="mb-2 flex items-start gap-2 text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="text-xs font-medium">AI summary &amp; tags failed</p>
+                  <p className="text-[11px] text-destructive/80">The note was saved, but its summary and tags could not be generated.</p>
+                </div>
               </div>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
-                aria-label={isRetrying ? "Retrying…" : "Retry AI processing"}
+                aria-label={isRetrying ? "Retrying AI processing" : "Retry AI processing"}
                 aria-busy={isRetrying}
-                className="h-6 gap-1 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive disabled:opacity-100"
+                className="w-full gap-2 bg-destructive/10 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-100"
                 disabled={isRetrying}
                 onClick={async () => {
                   setIsRetrying(true);
@@ -211,11 +215,14 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
                 }}
               >
                 {isRetrying ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Regenerating summary &amp; tags…
+                  </>
                 ) : (
                   <>
-                    <RotateCw className="h-3 w-3" />
-                    Retry
+                    <RotateCw className="h-3.5 w-3.5" />
+                    Retry AI processing
                   </>
                 )}
               </Button>
@@ -272,7 +279,7 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
             <span key={tag} className="group/tag flex items-center gap-0.5 rounded-full bg-tag-bg px-2 py-0.5 text-xs text-tag-foreground">
               {tag}
               {isEditingTags && (
-                <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 rounded-full hover:text-destructive">
+                <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 rounded-full hover:text-destructive" disabled={isLocked}>
                   <X className="h-2.5 w-2.5" />
                 </button>
               )}
@@ -288,8 +295,9 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
                 placeholder="Add tag..."
                 className="h-5 w-20 rounded border bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 autoFocus
+                disabled={isLocked}
               />
-              <button onClick={() => { setIsEditingTags(false); setTagInput(""); }} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => { setIsEditingTags(false); setTagInput(""); }} className="text-muted-foreground hover:text-foreground" disabled={isLocked}>
                 <Check className="h-3 w-3" />
               </button>
             </div>
@@ -297,11 +305,19 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
             <button
               onClick={() => setIsEditingTags(true)}
               className="flex items-center gap-0.5 rounded-full border border-dashed border-muted-foreground/30 px-1.5 py-0.5 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-primary/50 hover:text-primary group-hover:opacity-100"
+              disabled={isLocked}
             >
               <Plus className="h-2.5 w-2.5" />
               tag
             </button>
           )}
+        </div>
+      )}
+
+      {isRetrying && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-card/80 backdrop-blur-[1px]">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs font-medium text-foreground">Regenerating summary &amp; tags…</p>
         </div>
       )}
 

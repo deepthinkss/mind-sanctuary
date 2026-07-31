@@ -46,6 +46,8 @@ export function Dashboard() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
   const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [retryErrors, setRetryErrors] = useState<Record<string, string>>({});
+
   const [extraFolders, setExtraFolders] = useState<string[]>([]);
 
   const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {

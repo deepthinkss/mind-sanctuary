@@ -22,7 +22,7 @@ interface NoteCardProps {
   onUpdateTags: (id: string, tags: string[]) => void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
-  onRetryProcess?: (id: string) => Promise<void>;
+  onRetryProcess?: (id: string) => Promise<boolean | void>;
 }
 
 export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {

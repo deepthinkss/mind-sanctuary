@@ -13,9 +13,10 @@ interface TimelineViewProps {
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
   onRetryProcess?: (id: string) => Promise<boolean | void>;
+  retryErrors?: Record<string, string>;
 }
 
-export function TimelineView({ notes, processingIds, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: TimelineViewProps) {
+export function TimelineView({ notes, processingIds, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess, retryErrors }: TimelineViewProps) {
   const grouped = useMemo(() => {
     const map = new Map<string, Tables<"notes">[]>();
     for (const note of notes) {
@@ -64,6 +65,7 @@ export function TimelineView({ notes, processingIds, onDelete, onEdit, onToggleP
                 onRewrite={onRewrite}
                 onGenerateQuestions={onGenerateQuestions}
                 onRetryProcess={onRetryProcess}
+                retryError={retryErrors?.[note.id]}
               />
             ))}
           </div>

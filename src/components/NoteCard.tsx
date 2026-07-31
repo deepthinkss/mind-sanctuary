@@ -16,6 +16,7 @@ import {
 interface NoteCardProps {
   note: Tables<"notes">;
   isAiProcessing?: boolean;
+  retryError?: string;
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
@@ -25,7 +26,7 @@ interface NoteCardProps {
   onRetryProcess?: (id: string) => Promise<boolean | void>;
 }
 
-export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);

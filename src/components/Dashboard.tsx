@@ -46,6 +46,8 @@ export function Dashboard() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<NoteStatus>("all");
   const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [retryErrors, setRetryErrors] = useState<Record<string, string>>({});
+
   const [extraFolders, setExtraFolders] = useState<string[]>([]);
 
   const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
@@ -295,9 +297,15 @@ export function Dashboard() {
     }
   }, [callAiFn, markProcessing, applyAiFolder]);
 
-  const handleRetryProcess = useCallback(async (id: string) => {
+  const handleRetryProcess = useCallback(async (id: string): Promise<boolean> => {
     const note = notes.find((n) => n.id === id);
-    if (!note) return;
+    if (!note) return false;
+    setRetryErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     markProcessing(id, true);
     try {
       // Smart retry: regenerate summary + tags only. Never touch note.content.
@@ -319,9 +327,13 @@ export function Dashboard() {
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
       if (!keepFolder) applyAiFolder(updated.folder || "Uncategorized");
       toast.success("Summary & tags regenerated");
+      return true;
     } catch (err: any) {
       console.error("Retry error:", err);
-      toast.error(err.message || "Failed to regenerate summary & tags");
+      const message = err?.message || "Failed to regenerate summary & tags";
+      setRetryErrors((prev) => ({ ...prev, [id]: message }));
+      toast.error("Retry failed", { description: message });
+      return false;
     } finally {
       markProcessing(id, false);
     }
@@ -343,12 +355,9 @@ export function Dashboard() {
       while (cursor < failed.length) {
         const idx = cursor++;
         const n = failed[idx];
-        try {
-          await handleRetryProcess(n.id);
-          ok++;
-        } catch {
-          fail++;
-        }
+        const success = await handleRetryProcess(n.id).catch(() => false);
+        if (success) ok++;
+        else fail++;
       }
     };
     try {
@@ -359,6 +368,7 @@ export function Dashboard() {
       setIsRetryingAll(false);
     }
   }, [notes, processingIds, handleRetryProcess]);
+
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {
@@ -617,11 +627,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : viewMode === "timeline" ? (
-        <TimelineView notes={filteredNotes} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
+        <TimelineView notes={filteredNotes} retryErrors={retryErrors} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
+            <NoteCard key={note.id} note={note} retryError={retryErrors[note.id]} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
           ))}
         </div>
       )}

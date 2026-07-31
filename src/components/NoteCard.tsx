@@ -202,10 +202,16 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
                   <p className="text-[11px] text-destructive/80">The note was saved, but its summary and tags could not be generated.</p>
                 </div>
               </div>
+              {retryError && (
+                <div role="alert" className="mb-2 rounded border border-destructive/40 bg-destructive/10 p-2">
+                  <p className="text-[11px] font-medium text-destructive">Last retry failed</p>
+                  <p className="mt-0.5 break-words text-[11px] text-destructive/90">{retryError}</p>
+                </div>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
-                aria-label={isRetrying ? "Retrying AI processing" : "Retry AI processing"}
+                aria-label={isRetrying ? "Retrying AI processing" : retryError ? "Try again" : "Retry AI processing"}
                 aria-busy={isRetrying}
                 className="w-full gap-2 bg-destructive/10 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-100"
                 disabled={isRetrying}
@@ -222,12 +228,13 @@ export function NoteCard({ note, isAiProcessing = false, onDelete, onEdit, onTog
                 ) : (
                   <>
                     <RotateCw className="h-3.5 w-3.5" />
-                    Retry AI processing
+                    {retryError ? "Try again" : "Retry AI processing"}
                   </>
                 )}
               </Button>
             </div>
           )}
+
           {note.summary && <p className="mb-2 text-sm font-medium text-foreground">{note.summary}</p>}
           <div className="mb-3 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:p-0 prose-pre:bg-transparent">
             <ReactMarkdown

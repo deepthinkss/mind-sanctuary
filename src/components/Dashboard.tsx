@@ -295,9 +295,15 @@ export function Dashboard() {
     }
   }, [callAiFn, markProcessing, applyAiFolder]);
 
-  const handleRetryProcess = useCallback(async (id: string) => {
+  const handleRetryProcess = useCallback(async (id: string): Promise<boolean> => {
     const note = notes.find((n) => n.id === id);
-    if (!note) return;
+    if (!note) return false;
+    setRetryErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     markProcessing(id, true);
     try {
       // Smart retry: regenerate summary + tags only. Never touch note.content.
@@ -319,9 +325,13 @@ export function Dashboard() {
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
       if (!keepFolder) applyAiFolder(updated.folder || "Uncategorized");
       toast.success("Summary & tags regenerated");
+      return true;
     } catch (err: any) {
       console.error("Retry error:", err);
-      toast.error(err.message || "Failed to regenerate summary & tags");
+      const message = err?.message || "Failed to regenerate summary & tags";
+      setRetryErrors((prev) => ({ ...prev, [id]: message }));
+      toast.error("Retry failed", { description: message });
+      return false;
     } finally {
       markProcessing(id, false);
     }
@@ -343,12 +353,9 @@ export function Dashboard() {
       while (cursor < failed.length) {
         const idx = cursor++;
         const n = failed[idx];
-        try {
-          await handleRetryProcess(n.id);
-          ok++;
-        } catch {
-          fail++;
-        }
+        const success = await handleRetryProcess(n.id).catch(() => false);
+        if (success) ok++;
+        else fail++;
       }
     };
     try {
@@ -359,6 +366,7 @@ export function Dashboard() {
       setIsRetryingAll(false);
     }
   }, [notes, processingIds, handleRetryProcess]);
+
 
   const handleGenerateQuestions = useCallback(async (id: string) => {
     try {

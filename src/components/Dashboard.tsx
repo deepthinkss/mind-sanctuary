@@ -326,7 +326,9 @@ export function Dashboard() {
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
       if (!keepFolder) applyAiFolder(updated.folder || "Uncategorized");
-      toast.success("Summary & tags regenerated");
+      toast.success("Summary & tags regenerated", {
+        description: updated.summary ? updated.summary.slice(0, 80) + (updated.summary.length > 80 ? "…" : "") : `Tags: ${updated.tags?.join(", ") || "none"}`,
+      });
       return true;
     } catch (err: any) {
       console.error("Retry error:", err);

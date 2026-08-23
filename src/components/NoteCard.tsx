@@ -35,6 +35,7 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [questions, setQuestions] = useState<string[]>([]);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 

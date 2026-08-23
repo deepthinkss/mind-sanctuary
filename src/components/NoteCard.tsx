@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles, AlertTriangle, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
@@ -36,6 +36,7 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
+  const [isHighlighted, setIsHighlighted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
@@ -43,12 +44,22 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
     day: "numeric",
   });
 
+  useEffect(() => {
+    if (!isRetrying && note.summary && !isAiProcessing) {
+      setIsHighlighted(true);
+      const timer = setTimeout(() => setIsHighlighted(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isRetrying, note.summary, isAiProcessing]);
+
   const handleSave = async () => {
     if (!editContent.trim() || isSaving) return;
     setIsSaving(true);
     try {
       await onEdit(note.id, editContent.trim());
       setIsEditing(false);
+      setIsHighlighted(true);
+      setTimeout(() => setIsHighlighted(false), 1500);
     } finally {
       setIsSaving(false);
     }
@@ -120,7 +131,7 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   const isLocked = isRetrying || isAiProcessing;
 
   return (
-    <div className={`group relative flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""} ${isLocked ? "pointer-events-none opacity-70" : ""}`}>
+    <div className={`group relative flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""} ${isLocked ? "pointer-events-none opacity-70" : ""} ${isHighlighted ? "animate-card-highlight" : ""}`}>
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Folder className="h-3 w-3" />

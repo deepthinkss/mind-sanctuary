@@ -175,12 +175,22 @@
   animation: ambient-glow 14s ease-in-out infinite;
 }
 
+@keyframes card-highlight {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-primary) 40%, transparent); border-color: color-mix(in oklch, var(--color-primary) 50%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--color-primary) 0%, transparent); border-color: color-mix(in oklch, var(--color-primary) 20%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-primary) 0%, transparent); border-color: var(--color-border); }
+}
+
+@utility animate-card-highlight {
+  animation: card-highlight 1.5s ease-out both;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-in-right,
   .animate-slide-in-left,
   .animate-stagger-slide,
-  .ambient-glow {
+  .ambient-glow,
+  .animate-card-highlight {
     animation: none;
   }
 }

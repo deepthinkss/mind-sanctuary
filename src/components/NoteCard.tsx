@@ -44,6 +44,14 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
     day: "numeric",
   });
 
+  useEffect(() => {
+    if (!isRetrying && note.summary && !isAiProcessing) {
+      setIsHighlighted(true);
+      const timer = setTimeout(() => setIsHighlighted(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isRetrying, note.summary, isAiProcessing]);
+
   const handleSave = async () => {
     if (!editContent.trim() || isSaving) return;
     setIsSaving(true);

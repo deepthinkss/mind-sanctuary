@@ -50,6 +50,8 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
     try {
       await onEdit(note.id, editContent.trim());
       setIsEditing(false);
+      setIsHighlighted(true);
+      setTimeout(() => setIsHighlighted(false), 1500);
     } finally {
       setIsSaving(false);
     }

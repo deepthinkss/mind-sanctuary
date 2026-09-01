@@ -96,6 +96,44 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
         </div>
       </div>
 
+      {/* Inline AI error banner */}
+      {activeError && (
+        <div className="relative border-b px-4 py-3 sm:px-8">
+          <div className="mx-auto flex w-full max-w-2xl items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-destructive">AI generation failed</p>
+              <p className="mt-0.5 break-words text-xs text-destructive/90">{activeError}</p>
+            </div>
+            {onRetryAi && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 border-destructive/40"
+                onClick={handleRetryAi}
+                disabled={isRetrying}
+                aria-busy={isRetrying}
+              >
+                {isRetrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {isRetrying ? "Retrying…" : "Retry"}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              aria-label="Dismiss error"
+              onClick={() => {
+                setSaveError(null);
+                onDismissAiError?.();
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Writing area */}
       <div className="relative flex flex-1 justify-center overflow-auto px-4 py-8 sm:px-8">
         <textarea

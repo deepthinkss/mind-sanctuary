@@ -239,6 +239,8 @@ export function Dashboard() {
     } catch (err: any) {
       console.error("Save error:", err);
       toast.error(err.message || "Failed to save note");
+      // Rethrow so surfaces like Focus Mode can show an inline retry banner.
+      throw err;
     } finally {
       setIsProcessing(false);
     }
@@ -487,7 +489,22 @@ export function Dashboard() {
         <CommandPalette onNewNote={() => noteInputRef.current?.focus()} onFocusSearch={() => searchRef.current?.focus()} onToggleTheme={toggleTheme} onSignOut={handleSignOut} isDark={isDark} />
       </ClientOnly>
       <ClientOnly fallback={null}>
-        <FocusMode isOpen={focusMode} onClose={() => setFocusMode(false)} onSave={handleSave} isProcessing={isProcessing} />
+        <FocusMode
+          isOpen={focusMode}
+          onClose={() => setFocusMode(false)}
+          onSave={handleSave}
+          isProcessing={isProcessing}
+          aiError={aiErrors["process-note"]?.message ?? null}
+          onDismissAiError={() => setAiErrors((prev) => { const n = { ...prev }; delete n["process-note"]; return n; })}
+          onRetryAi={async () => {
+            const target = notes.find((n) => !n.summary && !processingIds.has(n.id));
+            if (!target) {
+              toast.info("No failed note to retry");
+              return false;
+            }
+            return handleRetryProcess(target.id);
+          }}
+        />
       </ClientOnly>
 
       {/* Header */}

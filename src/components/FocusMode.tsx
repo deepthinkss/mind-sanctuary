@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import SideRays from "./SideRays";
 
 interface FocusModeProps {
@@ -8,10 +8,17 @@ interface FocusModeProps {
   onClose: () => void;
   onSave: (content: string) => Promise<void>;
   isProcessing: boolean;
+  /** Inline AI generation failure (e.g. missing API key) shown as a banner with retry. */
+  aiError?: string | null;
+  onDismissAiError?: () => void;
+  /** Re-run AI generation for the note that failed (summary & tags). */
+  onRetryAi?: () => Promise<boolean | void>;
 }
 
-export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModeProps) {
+export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDismissAiError, onRetryAi }: FocusModeProps) {
   const [content, setContent] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -31,10 +38,28 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
 
   const handleSave = async () => {
     if (!content.trim() || isProcessing) return;
-    await onSave(content.trim());
-    setContent("");
-    onClose();
+    setSaveError(null);
+    try {
+      await onSave(content.trim());
+      setContent("");
+      onClose();
+    } catch (err: any) {
+      // Keep the note open with the draft intact so the user can retry.
+      setSaveError(err?.message || "AI generation failed. Check your API key configuration.");
+    }
   };
+
+  const handleRetryAi = async () => {
+    if (!onRetryAi || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      await onRetryAi();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const activeError = saveError || aiError || null;
 
   if (!isOpen) return null;
 
@@ -70,6 +95,44 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
           </Button>
         </div>
       </div>
+
+      {/* Inline AI error banner */}
+      {activeError && (
+        <div className="relative border-b px-4 py-3 sm:px-8">
+          <div className="mx-auto flex w-full max-w-2xl items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-destructive">AI generation failed</p>
+              <p className="mt-0.5 break-words text-xs text-destructive/90">{activeError}</p>
+            </div>
+            {onRetryAi && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 border-destructive/40"
+                onClick={handleRetryAi}
+                disabled={isRetrying}
+                aria-busy={isRetrying}
+              >
+                {isRetrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {isRetrying ? "Retrying…" : "Retry"}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              aria-label="Dismiss error"
+              onClick={() => {
+                setSaveError(null);
+                onDismissAiError?.();
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Writing area */}
       <div className="relative flex flex-1 justify-center overflow-auto px-4 py-8 sm:px-8">

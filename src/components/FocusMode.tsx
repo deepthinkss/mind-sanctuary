@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import SideRays from "./SideRays";
 
 interface FocusModeProps {
@@ -8,10 +8,17 @@ interface FocusModeProps {
   onClose: () => void;
   onSave: (content: string) => Promise<void>;
   isProcessing: boolean;
+  /** Inline AI generation failure (e.g. missing API key) shown as a banner with retry. */
+  aiError?: string | null;
+  onDismissAiError?: () => void;
+  /** Re-run AI generation for the note that failed (summary & tags). */
+  onRetryAi?: () => Promise<boolean | void>;
 }
 
-export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModeProps) {
+export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDismissAiError, onRetryAi }: FocusModeProps) {
   const [content, setContent] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -31,10 +38,28 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing }: FocusModePr
 
   const handleSave = async () => {
     if (!content.trim() || isProcessing) return;
-    await onSave(content.trim());
-    setContent("");
-    onClose();
+    setSaveError(null);
+    try {
+      await onSave(content.trim());
+      setContent("");
+      onClose();
+    } catch (err: any) {
+      // Keep the note open with the draft intact so the user can retry.
+      setSaveError(err?.message || "AI generation failed. Check your API key configuration.");
+    }
   };
+
+  const handleRetryAi = async () => {
+    if (!onRetryAi || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      await onRetryAi();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const activeError = saveError || aiError || null;
 
   if (!isOpen) return null;
 

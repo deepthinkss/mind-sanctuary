@@ -60,14 +60,22 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
 
   const handleConfirmSave = async () => {
     if (!preview || !content.trim() || isProcessing) return;
-    await onSave(content.trim(), preview);
-    resetAll();
+    try {
+      await onSave(content.trim(), preview);
+      resetAll();
+    } catch {
+      // Keep the draft so the user can retry; error toast already shown.
+    }
   };
 
   const handleQuickSave = async () => {
     if (!content.trim() || isProcessing) return;
-    await onSave(content.trim());
-    resetAll();
+    try {
+      await onSave(content.trim());
+      resetAll();
+    } catch {
+      // Keep the draft so the user can retry; error toast already shown.
+    }
   };
 
   const addTag = (tag: string) => {

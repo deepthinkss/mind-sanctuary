@@ -18,11 +18,11 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2 } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { ClientOnly } from "@tanstack/react-router";
+import { ClientOnly, Link } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
 import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
 
@@ -521,6 +521,11 @@ export function Dashboard() {
         <div className="absolute right-0 top-0 flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={() => setFocusMode(true)} title="Focus Mode">
             <Focus className="h-4 w-4" />
+          </Button>
+          <Button asChild variant="ghost" size="icon" title="Version history">
+            <Link to="/history" aria-label="Version history">
+              <History className="h-4 w-4" />
+            </Link>
           </Button>
           <ClientOnly fallback={null}>
             <HealthStatus />

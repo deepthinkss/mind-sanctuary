@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileText, Folder, History, Loader2, Pencil, Search, Sparkles, Tags } from "lucide-react";
+import { ArrowLeft, FileText, Folder, History, Loader2, Pencil, RotateCcw, Search, Sparkles, Tags } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -51,6 +51,41 @@ export function HistoryPage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>("all");
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  const handleRestore = async (note: Note, version: Version) => {
+    setRestoringId(version.id);
+    try {
+      const { error } = await supabase
+        .from("notes")
+        .update({
+          content: version.content,
+          summary: version.summary,
+          folder: version.folder,
+          tags: version.tags,
+        })
+        .eq("id", note.id);
+      if (error) throw error;
+
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === note.id
+            ? { ...n, content: version.content, summary: version.summary, folder: version.folder, tags: version.tags }
+            : n,
+        ),
+      );
+      const { data: versionData } = await supabase
+        .from("note_versions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (versionData) setVersions(versionData);
+      toast.success("Restored previous version");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to restore");
+    } finally {
+      setRestoringId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;

@@ -286,12 +286,28 @@ export function HistoryPage() {
                         const isAiUpdate = version.change_type === "ai_update";
                         return (
                           <div key={version.id} className="grid gap-3 border-b py-4 last:border-b-0 sm:grid-cols-[150px_1fr]">
-                            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                              {isAiUpdate ? <Sparkles className="mt-0.5 h-3.5 w-3.5 text-primary" /> : <Pencil className="mt-0.5 h-3.5 w-3.5" />}
-                              <div>
-                                <p className="font-medium text-foreground">{isAiUpdate ? "AI update" : "Edit"}</p>
-                                <p className="mt-0.5">{formatDate(version.created_at)}</p>
+                            <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-start gap-2">
+                                {isAiUpdate ? <Sparkles className="mt-0.5 h-3.5 w-3.5 text-primary" /> : <Pencil className="mt-0.5 h-3.5 w-3.5" />}
+                                <div>
+                                  <p className="font-medium text-foreground">{isAiUpdate ? "AI update" : "Edit"}</p>
+                                  <p className="mt-0.5">{formatDate(version.created_at)}</p>
+                                </div>
                               </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1 px-2 text-xs"
+                                disabled={restoringId === version.id}
+                                onClick={() => handleRestore(note, version)}
+                              >
+                                {restoringId === version.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="h-3 w-3" />
+                                )}
+                                Restore
+                              </Button>
                             </div>
                             <div className="min-w-0">
                               <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">{version.content}</p>

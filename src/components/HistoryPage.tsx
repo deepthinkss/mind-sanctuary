@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileText, Folder, History, Loader2, Pencil, Search, Sparkles, Tags } from "lucide-react";
+import { ArrowLeft, FileText, Folder, History, Loader2, Pencil, RotateCcw, Search, Sparkles, Tags } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -51,6 +51,41 @@ export function HistoryPage() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>("all");
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  const handleRestore = async (note: Note, version: Version) => {
+    setRestoringId(version.id);
+    try {
+      const { error } = await supabase
+        .from("notes")
+        .update({
+          content: version.content,
+          summary: version.summary,
+          folder: version.folder,
+          tags: version.tags,
+        })
+        .eq("id", note.id);
+      if (error) throw error;
+
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === note.id
+            ? { ...n, content: version.content, summary: version.summary, folder: version.folder, tags: version.tags }
+            : n,
+        ),
+      );
+      const { data: versionData } = await supabase
+        .from("note_versions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (versionData) setVersions(versionData);
+      toast.success("Restored previous version");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to restore");
+    } finally {
+      setRestoringId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -251,12 +286,28 @@ export function HistoryPage() {
                         const isAiUpdate = version.change_type === "ai_update";
                         return (
                           <div key={version.id} className="grid gap-3 border-b py-4 last:border-b-0 sm:grid-cols-[150px_1fr]">
-                            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                              {isAiUpdate ? <Sparkles className="mt-0.5 h-3.5 w-3.5 text-primary" /> : <Pencil className="mt-0.5 h-3.5 w-3.5" />}
-                              <div>
-                                <p className="font-medium text-foreground">{isAiUpdate ? "AI update" : "Edit"}</p>
-                                <p className="mt-0.5">{formatDate(version.created_at)}</p>
+                            <div className="flex flex-col items-start gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-start gap-2">
+                                {isAiUpdate ? <Sparkles className="mt-0.5 h-3.5 w-3.5 text-primary" /> : <Pencil className="mt-0.5 h-3.5 w-3.5" />}
+                                <div>
+                                  <p className="font-medium text-foreground">{isAiUpdate ? "AI update" : "Edit"}</p>
+                                  <p className="mt-0.5">{formatDate(version.created_at)}</p>
+                                </div>
                               </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1 px-2 text-xs"
+                                disabled={restoringId === version.id}
+                                onClick={() => handleRestore(note, version)}
+                              >
+                                {restoringId === version.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="h-3 w-3" />
+                                )}
+                                Restore
+                              </Button>
                             </div>
                             <div className="min-w-0">
                               <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">{version.content}</p>

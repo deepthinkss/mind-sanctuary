@@ -133,11 +133,46 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   return (
     <div className={`group relative flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""} ${isLocked ? "pointer-events-none opacity-70" : ""} ${isHighlighted ? "animate-card-highlight" : ""}`}>
       <div className="mb-2 flex items-start justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Folder className="h-3 w-3" />
-          <span>{note.folder || "Uncategorized"}</span>
-          {note.pinned && <Pin className="h-3 w-3 text-primary" />}
-        </div>
+        {isEditingFolder ? (
+          <div className="flex items-center gap-1">
+            <Folder className="h-3 w-3 text-muted-foreground" />
+            <input
+              list={`folders-${note.id}`}
+              value={folderInput}
+              autoFocus
+              onChange={(e) => setFolderInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); commitFolder(); }
+                if (e.key === "Escape") { setIsEditingFolder(false); setFolderInput(note.folder || "Uncategorized"); }
+              }}
+              onBlur={commitFolder}
+              placeholder="Folder name"
+              className="h-6 w-36 rounded border bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <datalist id={`folders-${note.id}`}>
+              {folderOptions.map((f) => <option key={f} value={f} />)}
+            </datalist>
+            {isSavingFolder && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Folder className="h-3 w-3" />
+            {onUpdateFolder ? (
+              <button
+                onClick={() => { setFolderInput(note.folder || "Uncategorized"); setIsEditingFolder(true); }}
+                className="rounded px-1 -mx-1 hover:bg-muted hover:text-foreground"
+                title="Change folder"
+                disabled={isLocked}
+              >
+                {note.folder || "Uncategorized"}
+              </button>
+            ) : (
+              <span>{note.folder || "Uncategorized"}</span>
+            )}
+            {note.pinned && <Pin className="h-3 w-3 text-primary" />}
+          </div>
+        )}
+
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground">{date}</span>
           {!isEditing && (

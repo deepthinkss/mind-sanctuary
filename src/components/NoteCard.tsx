@@ -6,6 +6,8 @@ import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
 import { NoteHistoryDialog } from "@/components/NoteHistoryDialog";
 import { AiProgress } from "@/components/AiProgress";
+import { normalizeFolderName } from "@/lib/folders";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,16 +19,18 @@ interface NoteCardProps {
   note: Tables<"notes">;
   isAiProcessing?: boolean;
   retryError?: string;
+  folderOptions?: string[];
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
   onUpdateTags: (id: string, tags: string[]) => void;
+  onUpdateFolder?: (id: string, folder: string) => Promise<void> | void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
   onRetryProcess?: (id: string) => Promise<boolean | void>;
 }
 
-export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, retryError, folderOptions = [], onDelete, onEdit, onTogglePin, onUpdateTags, onUpdateFolder, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +42,23 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   const [questions, setQuestions] = useState<string[]>([]);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isEditingFolder, setIsEditingFolder] = useState(false);
+  const [folderInput, setFolderInput] = useState(note.folder || "Uncategorized");
+  const [isSavingFolder, setIsSavingFolder] = useState(false);
+
+  const commitFolder = async () => {
+    if (!onUpdateFolder || isSavingFolder) return;
+    const next = normalizeFolderName(folderInput);
+    setIsEditingFolder(false);
+    if (next === (note.folder || "Uncategorized")) return;
+    setIsSavingFolder(true);
+    try {
+      await onUpdateFolder(note.id, next);
+    } finally {
+      setIsSavingFolder(false);
+    }
+  };
+
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
     month: "short",

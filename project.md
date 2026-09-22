@@ -84,6 +84,8 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 │   │   ├── HealthStatus.tsx        # Edge Function health popover (live status, per-fn errors)
 │   │   ├── AiActivityBanner.tsx    # Per-function AI error + last successful result banner
 │   │   └── ui/                     # shadcn/ui library
+│   ├── lib/
+│   │   └── folders.ts              # AI folder normalization (canonical set + Title Case)
 │   ├── integrations/supabase/      # Auto-generated client + types
 │   ├── styles.css                  # Tailwind v4 + OKLCH tokens
 │   └── router.tsx
@@ -186,6 +188,12 @@ Used by every edge function in this project. It's a fast, cost-efficient preview
 
 - **Left sidebar folder management** (`FolderSidebar.tsx`) — replaces the old pill filter with a persistent left sidebar that lists every folder with a note count, supports inline **rename** and **delete** (with confirmation), and has a dedicated **New folder** input. Selecting a folder filters the grid instantly, and deleting a folder moves its notes to `Uncategorized`. The layout is wrapped in `SidebarProvider` with a `SidebarTrigger` for responsive collapse.
 - **Atmospheric focus mode** (`FocusMode.tsx` + `SideRays.tsx`) — the full-screen writing surface now has a minimal, slow-moving ambient background: a custom `SideRays` WebGL/canvas-style ray animation (toned-down speed, desaturated white/ slate colors, low opacity and blend) plus a subtle `ambient-glow` radial pulse behind the content. The effect is purely decorative and obeys `prefers-reduced-motion`.
+
+### Phase 9 — Smarter Folder Naming & Manual Override
+
+- **Canonical folder set** (`src/lib/folders.ts`) — AI-suggested folders are normalized into a small, consistent, human-readable set (`Work`, `Personal`, `Ideas`, `Projects`, `Learning`, `Health`, `Finance`, `Travel`, `Reading`, `Journal`, `Uncategorized`) via `normalizeFolderName()`. The helper collapses separators (`work_stuff` → "Work"), splits camelCase/PascalCase, strips noise characters, maps common aliases (`job`/`office` → `Work`, `fitness` → `Health`, `diary` → `Journal`), and Title-Cases any genuinely new folder name. This keeps the sidebar free of near-duplicates like "work-stuff", "WORK", "Work Notes".
+- **AI folder prompt tightened** (`process-note/index.ts`) — the system prompt and `organize_note` tool description now instruct Gemini to prefer the canonical folders, only invent a new folder when none fits, and always emit clean 1–2 word Title Case names (no slugs, snake_case, ALL CAPS, emojis, or dates).
+- **Manual folder override** (`NoteCard.tsx` + `Dashboard.tsx`) — every note card shows its folder as a clickable label. Clicking it turns into an inline input with a `<datalist>` of existing folders (autocomplete + free entry); pressing **Enter** saves, **Escape** cancels. The entered value is run through `normalizeFolderName` before persisting, so manual entries stay consistent with the AI's naming. The override is honored across save, edit, rewrite, and retry: retries **preserve any user-assigned folder** and only auto-file notes that are still `Uncategorized`, while `applyAiFolder` registers new AI folders into the sidebar and switches the active view to them.
 
 
 

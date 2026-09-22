@@ -155,8 +155,20 @@ export function Dashboard() {
     setLoading(false);
   };
 
+  const handleUpdateFolder = useCallback(async (id: string, folder: string) => {
+    const next = normalizeFolderName(folder);
+    const { data: updated, error } = await supabase
+      .from("notes")
+      .update({ folder: next })
+      .eq("id", id).select().single();
+    if (error) { toast.error("Failed to move note"); return; }
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...updated } : n)));
+    setExtraFolders((prev) => (prev.includes(next) ? prev : [...prev, next]));
+    toast.success(`Moved to "${next}"`);
+  }, []);
+
   const applyAiFolder = useCallback((folder: string) => {
-    const f = folder || "Uncategorized";
+    const f = normalizeFolderName(folder);
     setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
     setSelectedFolder((current) => {
       if (current === null) return null;
@@ -165,6 +177,7 @@ export function Dashboard() {
       return f;
     });
   }, []);
+
 
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);

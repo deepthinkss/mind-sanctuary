@@ -12,11 +12,13 @@ interface TimelineViewProps {
   onUpdateTags: (id: string, tags: string[]) => void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
+  onUpdateFolder?: (id: string, folder: string) => Promise<void> | void;
+  folderOptions?: string[];
   onRetryProcess?: (id: string) => Promise<boolean | void>;
   retryErrors?: Record<string, string>;
 }
 
-export function TimelineView({ notes, processingIds, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess, retryErrors }: TimelineViewProps) {
+export function TimelineView({ notes, processingIds, onDelete, onEdit, onTogglePin, onUpdateTags, onUpdateFolder, folderOptions, onRewrite, onGenerateQuestions, onRetryProcess, retryErrors }: TimelineViewProps) {
   const grouped = useMemo(() => {
     const map = new Map<string, Tables<"notes">[]>();
     for (const note of notes) {
@@ -64,6 +66,8 @@ export function TimelineView({ notes, processingIds, onDelete, onEdit, onToggleP
                 onUpdateTags={onUpdateTags}
                 onRewrite={onRewrite}
                 onGenerateQuestions={onGenerateQuestions}
+                onUpdateFolder={onUpdateFolder}
+                folderOptions={folderOptions}
                 onRetryProcess={onRetryProcess}
                 retryError={retryErrors?.[note.id]}
               />

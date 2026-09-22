@@ -6,6 +6,8 @@ import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
 import { NoteHistoryDialog } from "@/components/NoteHistoryDialog";
 import { AiProgress } from "@/components/AiProgress";
+import { normalizeFolderName } from "@/lib/folders";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,16 +19,18 @@ interface NoteCardProps {
   note: Tables<"notes">;
   isAiProcessing?: boolean;
   retryError?: string;
+  folderOptions?: string[];
   onDelete: (id: string) => void;
   onEdit: (id: string, content: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
   onUpdateTags: (id: string, tags: string[]) => void;
+  onUpdateFolder?: (id: string, folder: string) => Promise<void> | void;
   onRewrite: (id: string, content: string, action: string) => Promise<void>;
   onGenerateQuestions: (id: string) => Promise<void>;
   onRetryProcess?: (id: string) => Promise<boolean | void>;
 }
 
-export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, onEdit, onTogglePin, onUpdateTags, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
+export function NoteCard({ note, isAiProcessing = false, retryError, folderOptions = [], onDelete, onEdit, onTogglePin, onUpdateTags, onUpdateFolder, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +42,23 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   const [questions, setQuestions] = useState<string[]>([]);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isEditingFolder, setIsEditingFolder] = useState(false);
+  const [folderInput, setFolderInput] = useState(note.folder || "Uncategorized");
+  const [isSavingFolder, setIsSavingFolder] = useState(false);
+
+  const commitFolder = async () => {
+    if (!onUpdateFolder || isSavingFolder) return;
+    const next = normalizeFolderName(folderInput);
+    setIsEditingFolder(false);
+    if (next === (note.folder || "Uncategorized")) return;
+    setIsSavingFolder(true);
+    try {
+      await onUpdateFolder(note.id, next);
+    } finally {
+      setIsSavingFolder(false);
+    }
+  };
+
 
   const date = new Date(note.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -133,11 +154,46 @@ export function NoteCard({ note, isAiProcessing = false, retryError, onDelete, o
   return (
     <div className={`group relative flex flex-col rounded-lg border bg-card p-3 shadow-sm transition-colors hover:bg-surface-hover sm:p-4 ${note.pinned ? "border-primary/40 ring-1 ring-primary/20" : ""} ${isLocked ? "pointer-events-none opacity-70" : ""} ${isHighlighted ? "animate-card-highlight" : ""}`}>
       <div className="mb-2 flex items-start justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Folder className="h-3 w-3" />
-          <span>{note.folder || "Uncategorized"}</span>
-          {note.pinned && <Pin className="h-3 w-3 text-primary" />}
-        </div>
+        {isEditingFolder ? (
+          <div className="flex items-center gap-1">
+            <Folder className="h-3 w-3 text-muted-foreground" />
+            <input
+              list={`folders-${note.id}`}
+              value={folderInput}
+              autoFocus
+              onChange={(e) => setFolderInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); commitFolder(); }
+                if (e.key === "Escape") { setIsEditingFolder(false); setFolderInput(note.folder || "Uncategorized"); }
+              }}
+              onBlur={commitFolder}
+              placeholder="Folder name"
+              className="h-6 w-36 rounded border bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <datalist id={`folders-${note.id}`}>
+              {folderOptions.map((f) => <option key={f} value={f} />)}
+            </datalist>
+            {isSavingFolder && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Folder className="h-3 w-3" />
+            {onUpdateFolder ? (
+              <button
+                onClick={() => { setFolderInput(note.folder || "Uncategorized"); setIsEditingFolder(true); }}
+                className="rounded px-1 -mx-1 hover:bg-muted hover:text-foreground"
+                title="Change folder"
+                disabled={isLocked}
+              >
+                {note.folder || "Uncategorized"}
+              </button>
+            ) : (
+              <span>{note.folder || "Uncategorized"}</span>
+            )}
+            {note.pinned && <Pin className="h-3 w-3 text-primary" />}
+          </div>
+        )}
+
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground">{date}</span>
           {!isEditing && (

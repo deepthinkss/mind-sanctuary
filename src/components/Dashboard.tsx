@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
 import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
+import { normalizeFolderName } from "@/lib/folders";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 
@@ -155,8 +156,20 @@ export function Dashboard() {
     setLoading(false);
   };
 
+  const handleUpdateFolder = useCallback(async (id: string, folder: string) => {
+    const next = normalizeFolderName(folder);
+    const { data: updated, error } = await supabase
+      .from("notes")
+      .update({ folder: next })
+      .eq("id", id).select().single();
+    if (error) { toast.error("Failed to move note"); return; }
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...updated } : n)));
+    setExtraFolders((prev) => (prev.includes(next) ? prev : [...prev, next]));
+    toast.success(`Moved to "${next}"`);
+  }, []);
+
   const applyAiFolder = useCallback((folder: string) => {
-    const f = folder || "Uncategorized";
+    const f = normalizeFolderName(folder);
     setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
     setSelectedFolder((current) => {
       if (current === null) return null;
@@ -166,6 +179,7 @@ export function Dashboard() {
     });
   }, []);
 
+
   const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
@@ -174,7 +188,7 @@ export function Dashboard() {
 
       // Insert immediately so the card shows up; AI fills in summary/tags after.
       const initial = ai
-        ? { summary: ai.summary, tags: ai.tags, folder: ai.folder || "Uncategorized" }
+        ? { summary: ai.summary, tags: ai.tags, folder: normalizeFolderName(ai.folder) }
         : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
       const { data: note, error: insertError } = await supabase
         .from("notes")
@@ -196,7 +210,7 @@ export function Dashboard() {
         (async () => {
           try {
             const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
-            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: data?.folder || "Uncategorized" };
+            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: normalizeFolderName(data?.folder) };
             const { data: updated } = await supabase
               .from("notes")
               .update(aiData)
@@ -258,7 +272,7 @@ export function Dashboard() {
       const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
+        .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
@@ -285,7 +299,7 @@ export function Dashboard() {
       const aiData = await callAiFn<any>("process-note", { content: data.result }, (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: aiData?.folder || "Uncategorized" })
+        .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
@@ -319,7 +333,7 @@ export function Dashboard() {
         summary: aiData?.summary || null,
         tags: aiData?.tags || [],
       };
-      if (!keepFolder && aiData?.folder) update.folder = aiData.folder;
+      if (!keepFolder && aiData?.folder) update.folder = normalizeFolderName(aiData.folder);
 
       const { data: updated, error: updateError } = await supabase
         .from("notes")
@@ -651,11 +665,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : viewMode === "timeline" ? (
-        <TimelineView notes={filteredNotes} retryErrors={retryErrors} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
+        <TimelineView notes={filteredNotes} retryErrors={retryErrors} processingIds={processingIds} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onUpdateFolder={handleUpdateFolder} folderOptions={folders} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.id} note={note} retryError={retryErrors[note.id]} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
+            <NoteCard key={note.id} note={note} retryError={retryErrors[note.id]} isAiProcessing={processingIds.has(note.id)} onDelete={handleDelete} onEdit={handleEdit} onTogglePin={handleTogglePin} onUpdateTags={handleUpdateTags} onUpdateFolder={handleUpdateFolder} folderOptions={folders} onRewrite={handleRewrite} onGenerateQuestions={handleGenerateQuestions} onRetryProcess={handleRetryProcess} />
           ))}
         </div>
       )}

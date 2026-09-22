@@ -34,9 +34,17 @@ serve(async (req) => {
             content: `You are an AI assistant that organizes notes. Given a note, you must return a JSON object with exactly these fields:
 - "summary": A single concise sentence summarizing the note.
 - "tags": An array of exactly 3 relevant tags (lowercase, no hashtags).
-- "folder": A single category/folder name for this note (e.g., "Work", "Ideas", "Personal", "Learning", "Projects", "Health", "Finance").
+- "folder": The single best matching folder name.
+
+FOLDER RULES (strict):
+- Prefer one of these standard folders: Work, Personal, Ideas, Projects, Learning, Health, Finance, Travel, Reading, Journal.
+- Only invent a new folder if none of the above reasonably fits.
+- A new folder must be 1-2 words, Title Case, singular topic words, plain English (e.g. "Recipes", "Side Hustle").
+- Never use slugs, snake_case, camelCase, ALL CAPS, emojis, punctuation, or dates in the folder name.
+- Use "Uncategorized" only when the note has no discernible topic.
 
 Return ONLY valid JSON, no markdown, no explanation.`
+
           },
           { role: "user", content: content.slice(0, 2000) }
         ],

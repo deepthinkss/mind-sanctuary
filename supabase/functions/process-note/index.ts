@@ -59,7 +59,7 @@ Return ONLY valid JSON, no markdown, no explanation.`
                 properties: {
                   summary: { type: "string", description: "One sentence summary" },
                   tags: { type: "array", items: { type: "string" }, description: "3 relevant tags" },
-                  folder: { type: "string", description: "Category folder name" }
+                  folder: { type: "string", description: "Human-readable Title Case folder name, preferring: Work, Personal, Ideas, Projects, Learning, Health, Finance, Travel, Reading, Journal, Uncategorized" }
                 },
                 required: ["summary", "tags", "folder"],
                 additionalProperties: false

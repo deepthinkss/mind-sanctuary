@@ -1,0 +1,3 @@
+- [ ] Add per-user folder and AI filing settings storage.
+- [ ] Build the Folder Settings page with an AI-powered sample filing preview and navigation.
+- [ ] Apply saved folder settings across note processing and normalization; verify the preview and build.

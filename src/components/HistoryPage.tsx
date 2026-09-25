@@ -60,6 +60,7 @@ export function HistoryPage() {
         .from("notes")
         .update({
           content: version.content,
+          title: version.title,
           summary: version.summary,
           folder: version.folder,
           tags: version.tags,
@@ -70,7 +71,7 @@ export function HistoryPage() {
       setNotes((prev) =>
         prev.map((n) =>
           n.id === note.id
-            ? { ...n, content: version.content, summary: version.summary, folder: version.folder, tags: version.tags }
+            ? { ...n, title: version.title, content: version.content, summary: version.summary, folder: version.folder, tags: version.tags }
             : n,
         ),
       );
@@ -145,11 +146,13 @@ export function HistoryPage() {
       if (!normalizedQuery) return true;
       const searchable = [
         note.content,
+        note.title,
         note.summary || "",
         note.folder || "",
         ...(note.tags || []),
         ...noteVersions.flatMap((version) => [
           version.content,
+          version.title,
           version.summary || "",
           version.folder || "",
           ...(version.tags || []),
@@ -257,7 +260,8 @@ export function HistoryPage() {
                           <span>·</span>
                           <span>Updated {formatDate(note.updated_at)}</span>
                         </div>
-                        <p className="line-clamp-2 text-sm text-foreground">{note.content}</p>
+                        <h2 className="mb-1 break-words text-base font-semibold text-foreground">{note.title || "Untitled note"}</h2>
+                        <p className="line-clamp-2 text-sm text-muted-foreground">{note.content}</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                         {noteVersions.length} {noteVersions.length === 1 ? "change" : "changes"}
@@ -310,6 +314,7 @@ export function HistoryPage() {
                               </Button>
                             </div>
                             <div className="min-w-0">
+                              <p className="mb-1 break-words text-sm font-semibold text-foreground">{version.title || "Untitled note"}</p>
                               <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">{version.content}</p>
                               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                                 <div>

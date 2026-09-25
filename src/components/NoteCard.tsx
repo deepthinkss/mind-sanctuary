@@ -32,6 +32,7 @@ interface NoteCardProps {
 
 export function NoteCard({ note, isAiProcessing = false, retryError, folderOptions = [], onDelete, onEdit, onTogglePin, onUpdateTags, onUpdateFolder, onRewrite, onGenerateQuestions, onRetryProcess }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(note.title);
   const [editContent, setEditContent] = useState(note.content);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingTags, setIsEditingTags] = useState(false);
@@ -77,7 +78,7 @@ export function NoteCard({ note, isAiProcessing = false, retryError, folderOptio
     if (!editContent.trim() || isSaving) return;
     setIsSaving(true);
     try {
-      await onEdit(note.id, editContent.trim());
+      await onEdit(note.id, editContent.trim(), editTitle.trim());
       setIsEditing(false);
       setIsHighlighted(true);
       setTimeout(() => setIsHighlighted(false), 1500);
@@ -87,6 +88,7 @@ export function NoteCard({ note, isAiProcessing = false, retryError, folderOptio
   };
 
   const handleCancel = () => {
+    setEditTitle(note.title);
     setEditContent(note.content);
     setIsEditing(false);
   };
@@ -242,6 +244,15 @@ export function NoteCard({ note, isAiProcessing = false, retryError, folderOptio
 
       {isEditing ? (
         <div className="flex flex-col gap-2">
+          <Input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder="Note title"
+            maxLength={120}
+            aria-label="Note title"
+            className="font-semibold"
+            disabled={isSaving}
+          />
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
@@ -260,6 +271,12 @@ export function NoteCard({ note, isAiProcessing = false, retryError, folderOptio
         </div>
       ) : (
         <>
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <h2 className="min-w-0 break-words text-base font-semibold text-foreground">{note.title || "Untitled note"}</h2>
+            <Button variant="ghost" size="icon" aria-label="Edit note title" title="Edit note title" className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => { setEditTitle(note.title || ""); setEditContent(note.content); setIsEditing(true); }} disabled={isLocked}>
+              <Pencil className="h-3 w-3" />
+            </Button>
+          </div>
           {isAiProcessing && <AiProgress active />}
           {!isAiProcessing && !note.summary && onRetryProcess && (
             <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5">

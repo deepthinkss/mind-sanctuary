@@ -138,6 +138,7 @@ export type Database = {
           note_id: string
           summary: string | null
           tags: string[] | null
+          title: string
           user_id: string
         }
         Insert: {
@@ -149,6 +150,7 @@ export type Database = {
           note_id: string
           summary?: string | null
           tags?: string[] | null
+          title?: string
           user_id: string
         }
         Update: {
@@ -160,6 +162,7 @@ export type Database = {
           note_id?: string
           summary?: string | null
           tags?: string[] | null
+          title?: string
           user_id?: string
         }
         Relationships: [
@@ -181,6 +184,7 @@ export type Database = {
           pinned: boolean
           summary: string | null
           tags: string[] | null
+          title: string
           updated_at: string
           user_id: string
         }
@@ -192,6 +196,7 @@ export type Database = {
           pinned?: boolean
           summary?: string | null
           tags?: string[] | null
+          title?: string
           updated_at?: string
           user_id: string
         }
@@ -203,6 +208,7 @@ export type Database = {
           pinned?: boolean
           summary?: string | null
           tags?: string[] | null
+          title?: string
           updated_at?: string
           user_id?: string
         }

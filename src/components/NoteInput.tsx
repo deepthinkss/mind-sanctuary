@@ -17,12 +17,13 @@ export interface AiPreview {
 }
 
 interface NoteInputProps {
-  onSave: (content: string, ai?: AiPreview) => Promise<void>;
+  onSave: (content: string, title: string, ai?: AiPreview) => Promise<void>;
   isProcessing: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps) {
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -31,6 +32,7 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   const [tagInput, setTagInput] = useState("");
 
   const resetAll = () => {
+    setTitle("");
     setContent("");
     setSuggestions([]);
     setPreview(null);
@@ -61,7 +63,7 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   const handleConfirmSave = async () => {
     if (!preview || !content.trim() || isProcessing) return;
     try {
-      await onSave(content.trim(), preview);
+      await onSave(content.trim(), title.trim(), preview);
       resetAll();
     } catch {
       // Keep the draft so the user can retry; error toast already shown.
@@ -71,7 +73,7 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   const handleQuickSave = async () => {
     if (!content.trim() || isProcessing) return;
     try {
-      await onSave(content.trim());
+      await onSave(content.trim(), title.trim());
       resetAll();
     } catch {
       // Keep the draft so the user can retry; error toast already shown.
@@ -131,6 +133,18 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   return (
     <div className="space-y-3">
       <div className="rounded-lg border bg-card p-3 shadow-sm sm:p-4">
+        <label htmlFor="new-note-title" className="mb-1 block text-xs font-medium text-muted-foreground sm:text-sm">
+          Title
+        </label>
+        <Input
+          id="new-note-title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Give this note a title"
+          maxLength={120}
+          className="mb-3 h-9 border-0 bg-transparent px-0 text-base font-semibold shadow-none focus-visible:ring-0"
+          disabled={isProcessing || isSuggesting || isAnalyzing}
+        />
         <label className="mb-2 block text-xs font-medium text-muted-foreground sm:text-sm">
           What's on your mind?
         </label>

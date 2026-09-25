@@ -25,6 +25,7 @@ type Version = {
   id: string;
   note_id: string;
   content: string;
+  title: string;
   summary: string | null;
   folder: string | null;
   tags: string[] | null;
@@ -36,7 +37,7 @@ interface Props {
   note: Tables<"notes">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRestore: (id: string, content: string) => Promise<void>;
+  onRestore: (id: string, content: string, title?: string) => Promise<void>;
 }
 
 export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props) {
@@ -69,7 +70,7 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
           return false;
       }
       if (q) {
-        const hay = `${v.content} ${v.summary ?? ""} ${v.folder ?? ""} ${(v.tags || []).join(" ")}`.toLowerCase();
+        const hay = `${v.title} ${v.content} ${v.summary ?? ""} ${v.folder ?? ""} ${(v.tags || []).join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -104,7 +105,7 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
   const handleRestore = async (v: Version) => {
     setRestoringId(v.id);
     try {
-      await onRestore(note.id, v.content);
+      await onRestore(note.id, v.content, v.title);
       toast.success("Restored previous version");
       onOpenChange(false);
     } catch (e: any) {
@@ -137,6 +138,7 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
             </span>
           </div>
           {note.summary && <p className="mb-1 text-sm font-medium text-foreground">{note.summary}</p>}
+          <p className="mb-1 text-sm font-semibold text-foreground">{note.title || "Untitled note"}</p>
           <p className="line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">{note.content}</p>
         </div>
 
@@ -210,6 +212,7 @@ export function NoteHistoryDialog({ note, open, onOpenChange, onRestore }: Props
                     {v.summary && (
                       <p className="mb-1 text-sm font-medium text-foreground">{v.summary}</p>
                     )}
+                    <p className="mb-1 text-sm font-semibold text-foreground">{v.title || "Untitled note"}</p>
                     <p className="line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
                       {v.content}
                     </p>

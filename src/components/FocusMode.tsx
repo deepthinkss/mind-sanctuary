@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { X, Sparkles, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import SideRays from "./SideRays";
 
 interface FocusModeProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (content: string) => Promise<void>;
+  onSave: (content: string, title: string) => Promise<void>;
   isProcessing: boolean;
   /** Inline AI generation failure (e.g. missing API key) shown as a banner with retry. */
   aiError?: string | null;
@@ -17,6 +18,7 @@ interface FocusModeProps {
 
 export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDismissAiError, onRetryAi }: FocusModeProps) {
   const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -40,7 +42,8 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
     if (!content.trim() || isProcessing) return;
     setSaveError(null);
     try {
-      await onSave(content.trim());
+      await onSave(content.trim(), title.trim());
+      setTitle("");
       setContent("");
       onClose();
     } catch (err: any) {
@@ -136,14 +139,24 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
 
       {/* Writing area */}
       <div className="relative flex flex-1 justify-center overflow-auto px-4 py-8 sm:px-8">
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Start writing... let your thoughts flow freely."
-          className="w-full max-w-2xl resize-none border-0 bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0 sm:text-lg sm:leading-relaxed"
-          disabled={isProcessing}
-        />
+        <div className="flex w-full max-w-2xl flex-col">
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+            maxLength={120}
+            className="mb-4 h-auto border-0 bg-transparent px-0 text-xl font-semibold shadow-none focus-visible:ring-0 sm:text-2xl"
+            disabled={isProcessing}
+          />
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Start writing... let your thoughts flow freely."
+            className="w-full flex-1 resize-none border-0 bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0 sm:text-lg sm:leading-relaxed"
+            disabled={isProcessing}
+          />
+        </div>
       </div>
 
       {/* Footer */}

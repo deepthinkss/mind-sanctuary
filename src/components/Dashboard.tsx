@@ -180,7 +180,7 @@ export function Dashboard() {
   }, []);
 
 
-  const handleSave = async (content: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
+  const handleSave = async (content: string, title: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -190,9 +190,10 @@ export function Dashboard() {
       const initial = ai
         ? { summary: ai.summary, tags: ai.tags, folder: normalizeFolderName(ai.folder) }
         : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
+      const noteTitle = title.trim() || content.split(/\r?\n/)[0]?.trim().slice(0, 120) || "Untitled note";
       const { data: note, error: insertError } = await supabase
         .from("notes")
-        .insert({ user_id: user.id, content, ...initial })
+        .insert({ user_id: user.id, title: noteTitle, content, ...initial })
         .select()
         .single();
       if (insertError) throw insertError;
@@ -266,13 +267,15 @@ export function Dashboard() {
     else setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
-  const handleEdit = async (id: string, content: string) => {
+  const handleEdit = async (id: string, content: string, title?: string) => {
     markProcessing(id, true);
     try {
       const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
+      const existingTitle = notes.find((note) => note.id === id)?.title;
+      const nextTitle = title?.trim() || existingTitle || content.split(/\r?\n/)[0]?.trim().slice(0, 120) || "Untitled note";
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({ content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
+        .update({ title: nextTitle, content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));

@@ -18,7 +18,7 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -26,6 +26,13 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
 import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
 import { normalizeFolderName } from "@/lib/folders";
+import {
+  FolderSettings,
+  DEFAULT_FOLDER_SETTINGS,
+  loadFolderSettings,
+  normalizeWithUserFolders,
+  processNoteBody,
+} from "@/lib/folderSettings";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 
@@ -50,6 +57,7 @@ export function Dashboard() {
   const [retryErrors, setRetryErrors] = useState<Record<string, string>>({});
 
   const [extraFolders, setExtraFolders] = useState<string[]>([]);
+  const [folderSettings, setFolderSettings] = useState<FolderSettings>(DEFAULT_FOLDER_SETTINGS);
 
   const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
     const { error } = await supabase.from("notes").update({ folder: newName }).eq("folder", oldName);
@@ -135,6 +143,16 @@ export function Dashboard() {
   useEffect(() => {
     fetchNotes();
     fetchGoalNoteIds();
+    loadFolderSettings().then((s) => {
+      setFolderSettings(s);
+      setExtraFolders((prev) => {
+        const merged = [...prev];
+        s.folders.forEach((f) => {
+          if (!merged.some((x) => x.toLowerCase() === f.toLowerCase())) merged.push(f);
+        });
+        return merged;
+      });
+    });
   }, []);
 
   const fetchGoalNoteIds = async () => {
@@ -169,7 +187,7 @@ export function Dashboard() {
   }, []);
 
   const applyAiFolder = useCallback((folder: string) => {
-    const f = normalizeFolderName(folder);
+    const f = normalizeWithUserFolders(folder, folderSettings.folders);
     setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
     setSelectedFolder((current) => {
       if (current === null) return null;
@@ -177,7 +195,7 @@ export function Dashboard() {
       toast.info(`Switched to "${f}" folder`);
       return f;
     });
-  }, []);
+  }, [folderSettings]);
 
 
   const handleSave = async (content: string, title: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
@@ -188,7 +206,7 @@ export function Dashboard() {
 
       // Insert immediately so the card shows up; AI fills in summary/tags after.
       const initial = ai
-        ? { summary: ai.summary, tags: ai.tags, folder: normalizeFolderName(ai.folder) }
+        ? { summary: ai.summary, tags: ai.tags, folder: normalizeWithUserFolders(ai.folder, folderSettings.folders) }
         : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
       const noteTitle = title.trim() || content.split(/\r?\n/)[0]?.trim().slice(0, 120) || "Untitled note";
       const { data: note, error: insertError } = await supabase
@@ -210,8 +228,8 @@ export function Dashboard() {
         markProcessing(note.id, true);
         (async () => {
           try {
-            const data = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
-            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: normalizeFolderName(data?.folder) };
+            const data = await callAiFn<any>("process-note", processNoteBody(content, folderSettings), (d) => d?.summary || "Processed note");
+            const aiData = { summary: data?.summary || null, tags: data?.tags || [], folder: normalizeWithUserFolders(data?.folder, folderSettings.folders) };
             const { data: updated } = await supabase
               .from("notes")
               .update(aiData)
@@ -270,12 +288,12 @@ export function Dashboard() {
   const handleEdit = async (id: string, content: string, title?: string) => {
     markProcessing(id, true);
     try {
-      const aiData = await callAiFn<any>("process-note", { content }, (d) => d?.summary || "Processed note");
+      const aiData = await callAiFn<any>("process-note", processNoteBody(content, folderSettings), (d) => d?.summary || "Processed note");
       const existingTitle = notes.find((note) => note.id === id)?.title;
       const nextTitle = title?.trim() || existingTitle || content.split(/\r?\n/)[0]?.trim().slice(0, 120) || "Untitled note";
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({ title: nextTitle, content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
+        .update({ title: nextTitle, content, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeWithUserFolders(aiData?.folder, folderSettings.folders) })
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
@@ -299,10 +317,10 @@ export function Dashboard() {
         (d) => `${action}: ${(d?.result || "").slice(0, 80)}`
       );
       if (!data?.result) throw new Error("No result returned");
-      const aiData = await callAiFn<any>("process-note", { content: data.result }, (d) => d?.summary || "Processed note");
+      const aiData = await callAiFn<any>("process-note", processNoteBody(data.result, folderSettings), (d) => d?.summary || "Processed note");
       const { data: updated, error: updateError } = await supabase
         .from("notes")
-        .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeFolderName(aiData?.folder) })
+        .update({ content: data.result, summary: aiData?.summary || null, tags: aiData?.tags || [], folder: normalizeWithUserFolders(aiData?.folder, folderSettings.folders) })
         .eq("id", id).select().single();
       if (updateError) throw updateError;
       setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
@@ -314,7 +332,7 @@ export function Dashboard() {
     } finally {
       markProcessing(id, false);
     }
-  }, [callAiFn, markProcessing, applyAiFolder]);
+  }, [callAiFn, markProcessing, applyAiFolder, folderSettings]);
 
   const handleRetryProcess = useCallback(async (id: string): Promise<boolean> => {
     const note = notes.find((n) => n.id === id);
@@ -330,13 +348,13 @@ export function Dashboard() {
       // Smart retry: regenerate summary + tags only. Never touch note.content.
       // Preserve the user's existing folder if they already have one; otherwise
       // adopt the AI's suggestion so uncategorized notes still get filed.
-      const aiData = await callAiFn<any>("process-note", { content: note.content }, (d) => d?.summary || "Regenerated summary & tags");
+      const aiData = await callAiFn<any>("process-note", processNoteBody(note.content, folderSettings), (d) => d?.summary || "Regenerated summary & tags");
       const keepFolder = note.folder && note.folder !== "Uncategorized";
       const update: { summary: string | null; tags: string[]; folder?: string } = {
         summary: aiData?.summary || null,
         tags: aiData?.tags || [],
       };
-      if (!keepFolder && aiData?.folder) update.folder = normalizeFolderName(aiData.folder);
+      if (!keepFolder && aiData?.folder) update.folder = normalizeWithUserFolders(aiData.folder, folderSettings.folders);
 
       const { data: updated, error: updateError } = await supabase
         .from("notes")
@@ -358,7 +376,7 @@ export function Dashboard() {
     } finally {
       markProcessing(id, false);
     }
-  }, [notes, callAiFn, markProcessing, applyAiFolder]);
+  }, [notes, callAiFn, markProcessing, applyAiFolder, folderSettings]);
 
   const handleRetryAllFailed = useCallback(async () => {
     const failed = notes.filter((n) => !n.summary && !processingIds.has(n.id));
@@ -542,6 +560,11 @@ export function Dashboard() {
           <Button asChild variant="ghost" size="icon" title="Version history">
             <Link to="/history" aria-label="Version history">
               <History className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="icon" title="Folder settings">
+            <Link to="/folder-settings" aria-label="Folder settings">
+              <Settings2 className="h-4 w-4" />
             </Link>
           </Button>
           <ClientOnly fallback={null}>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Folder, FolderPlus, Layers, Pencil, Trash2, Check, X } from "lucide-react";
+import { Folder, FolderPlus, Layers, Pencil, Trash2, Check, X, Settings2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -175,6 +176,19 @@ export function FolderSidebar({
               />
               <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleAdd} title="Add folder">
                 <FolderPlus className="h-4 w-4" />
+              </Button>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <div className="px-2">
+              <Button asChild variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground">
+                <Link to="/folder-settings">
+                  <Settings2 className="h-3.5 w-3.5" />
+                  Folder settings
+                </Link>
               </Button>
             </div>
           </SidebarGroupContent>

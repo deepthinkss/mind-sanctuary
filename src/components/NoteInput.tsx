@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Sparkles, Loader2, Lightbulb, X, Check, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { loadFolderSettings, processNoteBody } from "@/lib/folderSettings";
 
 interface Suggestion {
   title: string;
@@ -43,8 +44,9 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
     if (!content.trim() || isProcessing || isAnalyzing) return;
     setIsAnalyzing(true);
     try {
+      const settings = await loadFolderSettings();
       const { data, error } = await supabase.functions.invoke("process-note", {
-        body: { content: content.trim() },
+        body: processNoteBody(content.trim(), settings),
       });
       if (error) throw error;
       setPreview({

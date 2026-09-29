@@ -5,11 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const DEFAULT_FOLDERS = ["Work", "Personal", "Ideas", "Projects", "Learning", "Health", "Finance", "Travel", "Reading", "Journal"];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { content } = await req.json();
+    const { content, folders, guidance } = await req.json();
     if (!content || typeof content !== "string" || content.trim().length === 0) {
       return new Response(JSON.stringify({ error: "Content is required" }), {
         status: 400,
@@ -17,8 +19,28 @@ serve(async (req) => {
       });
     }
 
+    const folderList: string[] =
+      Array.isArray(folders) && folders.length
+        ? folders.filter((f: unknown) => typeof f === "string" && f.trim()).slice(0, 30)
+        : DEFAULT_FOLDERS;
+    const extraGuidance = typeof guidance === "string" && guidance.trim() ? guidance.trim().slice(0, 1000) : "";
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const systemPrompt = `You are an AI assistant that organizes notes. Given a note, you must return a JSON object with exactly these fields:
+- "summary": A single concise sentence summarizing the note.
+- "tags": An array of exactly 3 relevant tags (lowercase, no hashtags).
+- "folder": The single best matching folder name.
+
+FOLDER RULES (strict):
+- Prefer one of these folders: ${folderList.join(", ")}.
+- Only invent a new folder if none of the above reasonably fits.
+- A new folder must be 1-2 words, Title Case, singular topic words, plain English (e.g. "Recipes", "Side Hustle").
+- Never use slugs, snake_case, camelCase, ALL CAPS, emojis, punctuation, or dates in the folder name.
+- Use "Uncategorized" only when the note has no discernible topic.
+${extraGuidance ? `\nUSER FILING GUIDANCE (follow unless it conflicts with the rules above):\n${extraGuidance}\n` : ""}
+Return ONLY valid JSON, no markdown, no explanation.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -29,23 +51,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant that organizes notes. Given a note, you must return a JSON object with exactly these fields:
-- "summary": A single concise sentence summarizing the note.
-- "tags": An array of exactly 3 relevant tags (lowercase, no hashtags).
-- "folder": The single best matching folder name.
-
-FOLDER RULES (strict):
-- Prefer one of these standard folders: Work, Personal, Ideas, Projects, Learning, Health, Finance, Travel, Reading, Journal.
-- Only invent a new folder if none of the above reasonably fits.
-- A new folder must be 1-2 words, Title Case, singular topic words, plain English (e.g. "Recipes", "Side Hustle").
-- Never use slugs, snake_case, camelCase, ALL CAPS, emojis, punctuation, or dates in the folder name.
-- Use "Uncategorized" only when the note has no discernible topic.
-
-Return ONLY valid JSON, no markdown, no explanation.`
-
-          },
+          { role: "system", content: systemPrompt },
           { role: "user", content: content.slice(0, 2000) }
         ],
         tools: [
@@ -59,7 +65,7 @@ Return ONLY valid JSON, no markdown, no explanation.`
                 properties: {
                   summary: { type: "string", description: "One sentence summary" },
                   tags: { type: "array", items: { type: "string" }, description: "3 relevant tags" },
-                  folder: { type: "string", description: "Human-readable Title Case folder name, preferring: Work, Personal, Ideas, Projects, Learning, Health, Finance, Travel, Reading, Journal, Uncategorized" }
+                  folder: { type: "string", description: `Human-readable Title Case folder name, preferring: ${folderList.join(", ")}, Uncategorized` }
                 },
                 required: ["summary", "tags", "folder"],
                 additionalProperties: false
@@ -91,7 +97,7 @@ Return ONLY valid JSON, no markdown, no explanation.`
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (toolCall?.function?.arguments) {
       const result = JSON.parse(toolCall.function.arguments);
       return new Response(JSON.stringify(result), {

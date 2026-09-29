@@ -18,7 +18,7 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -560,6 +560,11 @@ export function Dashboard() {
           <Button asChild variant="ghost" size="icon" title="Version history">
             <Link to="/history" aria-label="Version history">
               <History className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="icon" title="Folder settings">
+            <Link to="/folder-settings" aria-label="Folder settings">
+              <Settings2 className="h-4 w-4" />
             </Link>
           </Button>
           <ClientOnly fallback={null}>

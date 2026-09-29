@@ -26,6 +26,13 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { HealthStatus } from "@/components/HealthStatus";
 import { AiActivityBanner, type AiErrorMap, type AiSuccess } from "@/components/AiActivityBanner";
 import { normalizeFolderName } from "@/lib/folders";
+import {
+  FolderSettings,
+  DEFAULT_FOLDER_SETTINGS,
+  loadFolderSettings,
+  normalizeWithUserFolders,
+  processNoteBody,
+} from "@/lib/folderSettings";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
 
@@ -50,6 +57,7 @@ export function Dashboard() {
   const [retryErrors, setRetryErrors] = useState<Record<string, string>>({});
 
   const [extraFolders, setExtraFolders] = useState<string[]>([]);
+  const [folderSettings, setFolderSettings] = useState<FolderSettings>(DEFAULT_FOLDER_SETTINGS);
 
   const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
     const { error } = await supabase.from("notes").update({ folder: newName }).eq("folder", oldName);
@@ -135,6 +143,16 @@ export function Dashboard() {
   useEffect(() => {
     fetchNotes();
     fetchGoalNoteIds();
+    loadFolderSettings().then((s) => {
+      setFolderSettings(s);
+      setExtraFolders((prev) => {
+        const merged = [...prev];
+        s.folders.forEach((f) => {
+          if (!merged.some((x) => x.toLowerCase() === f.toLowerCase())) merged.push(f);
+        });
+        return merged;
+      });
+    });
   }, []);
 
   const fetchGoalNoteIds = async () => {
@@ -169,7 +187,7 @@ export function Dashboard() {
   }, []);
 
   const applyAiFolder = useCallback((folder: string) => {
-    const f = normalizeFolderName(folder);
+    const f = normalizeWithUserFolders(folder, folderSettings.folders);
     setExtraFolders((prev) => (prev.includes(f) ? prev : [...prev, f]));
     setSelectedFolder((current) => {
       if (current === null) return null;

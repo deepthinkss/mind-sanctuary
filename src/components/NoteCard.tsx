@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Folder, Trash2, Pencil, Check, X, Loader2, Pin, PinOff, Plus, RefreshCw, HelpCircle, ChevronDown, Download, History, Sparkles, AlertTriangle, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Tables } from "@/integrations/supabase/types";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "@/components/CodeBlock";
@@ -21,7 +22,7 @@ interface NoteCardProps {
   retryError?: string;
   folderOptions?: string[];
   onDelete: (id: string) => void;
-  onEdit: (id: string, content: string) => Promise<void>;
+  onEdit: (id: string, content: string, title?: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => void;
   onUpdateTags: (id: string, tags: string[]) => void;
   onUpdateFolder?: (id: string, folder: string) => Promise<void> | void;

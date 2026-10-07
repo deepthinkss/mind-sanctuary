@@ -1,4 +1,5 @@
-- [ ] Add editable note titles and show them on note cards and in version history.
-- [ ] Add per-user folder and AI filing settings storage.
-- [ ] Build the Folder Settings page with an AI-powered sample filing preview and navigation.
-- [ ] Apply saved folder settings across note processing and normalization; verify the preview and build.
+- [x] Add editable note titles and show them on note cards and in version history.
+- [x] Add per-user folder and AI filing settings storage.
+- [x] Build the Folder Settings page with an AI-powered sample filing preview and navigation.
+- [x] Apply saved folder settings across note processing and normalization; verify the preview and build.
+- [ ] Run a real note-filing test after signing in to the preview; currently blocked by no active session.

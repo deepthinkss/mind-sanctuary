@@ -11,6 +11,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Knowledge Hub — AI-Powered Note Organization" },
       { name: "description", content: "Smart personal knowledge hub that uses AI to organize your thoughts and notes automatically." },
+      { property: "og:title", content: "Knowledge Hub — AI-Powered Note Organization" },
+      { property: "og:description", content: "Smart personal knowledge hub that uses AI to organize your thoughts and notes automatically." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });

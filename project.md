@@ -1,337 +1,131 @@
-# Smart Personal Knowledge Hub — Project Documentation
+# Smart Personal Knowledge Hub — Architecture & Project Reference
 
-## Overview
+## Product summary
 
-A modern, minimalist **AI-powered Second Brain** that turns scattered thoughts into a connected, goal-aware knowledge system. Users write brain dumps; the AI organizes them into summaries, tags, folders, semantic clusters, **typed relations between notes (knowledge graph)**, and **goal progress with next-step suggestions**.
+Knowledge Hub is a personal note-capture and retrieval app. A user writes a note, reviews AI-generated metadata, and saves it into a private workspace. Notes can be searched, filtered, revised, connected to other notes, linked to goals, and restored from version history.
 
-**Live Preview:** https://id-preview--dea5fc16-0949-43c8-a896-881b4f8a6893.lovable.app
+## Current technology
 
----
+| Layer | Technology and responsibility |
+| --- | --- |
+| Web app | React 19 with TanStack Start v1 file-based routes; SSR-capable app hosted on Cloudflare Workers. |
+| Build and styling | Vite 7, TypeScript, Tailwind CSS v4, semantic CSS tokens, shadcn/ui primitives, Lucide icons, Sonner toasts. |
+| Authentication and data | Lovable Cloud provides authentication and Postgres. The generated browser client uses the signed-in user's session; row-level security (RLS) scopes database access. |
+| AI endpoints | Supabase Edge Functions running on Deno. The browser invokes these functions through the generated client; AI credentials remain on the function side. |
+| AI provider | Lovable AI Gateway, currently using `google/gemini-3-flash-preview` in the AI functions. |
+| Local-only data | To-do items are stored in browser `localStorage`; they are not synchronized to the database. |
 
-## Tech Stack
+The Cloudflare Worker hosts the TanStack web app. It is distinct from the Deno runtime used by the AI Edge Functions.
 
-| Layer            | Technology                                                    |
-| ---------------- | ------------------------------------------------------------- |
-| **Framework**    | TanStack Start v1 (React 19, SSR/SSG, file-based routing)    |
-| **Build Tool**   | Vite 7                                                        |
-| **Language**     | TypeScript (strict mode)                                      |
-| **Styling**      | Tailwind CSS v4 (OKLCH color tokens, light/dark theme)        |
-| **UI Components**| shadcn/ui (Button, Card, Toast via Sonner, etc.)              |
-| **Markdown**     | react-markdown                                                |
-| **Icons**        | Lucide React                                                  |
-| **Backend**      | Lovable Cloud (Supabase) — Database, Auth, Edge Functions     |
-| **AI Gateway**   | Lovable AI Gateway → Google Gemini models                     |
-| **Edge Runtime** | Deno (Supabase Edge Functions)                                |
-| **Deployment**   | Lovable Cloud (Cloudflare Workers for SSR)                    |
+## Application architecture
 
----
+```text
+Browser (React UI)
+  ├─ TanStack Start routes and shared UI
+  ├─ Lovable Cloud browser client
+  │    ├─ Auth session
+  │    └─ Postgres reads/writes, enforced by RLS
+  └─ supabase.functions.invoke(...)
+       └─ Deno Edge Function
+            └─ Lovable AI Gateway → Gemini
 
-## AI Models — Google Gemini via Lovable AI Gateway
-
-All AI features route through the **Lovable AI Gateway** (`https://ai.gateway.lovable.dev/v1/chat/completions`), which is OpenAI-compatible and authenticated via the auto-provisioned `LOVABLE_API_KEY` secret. Calls are **never made from the client** — every request goes through a Deno Edge Function for security and prompt control.
-
-### Default Model: `google/gemini-3-flash-preview`
-
-Used by every edge function in this project. It's a fast, cost-efficient preview of Google's next-generation Gemini model with strong reasoning at low latency — the right balance for note processing, search, and chat.
-
-### Available Google models on the gateway
-
-| Model                                    | Best for                                                          |
-| ---------------------------------------- | ----------------------------------------------------------------- |
-| `google/gemini-3-flash-preview` ✅ used  | Fast multipurpose reasoning (default for all functions)           |
-| `google/gemini-3.1-pro-preview`          | Heaviest reasoning, latest preview                                |
-| `google/gemini-2.5-pro`                  | Multimodal + complex reasoning, large context                     |
-| `google/gemini-2.5-flash`                | Balanced cost/latency vs Pro                                      |
-| `google/gemini-2.5-flash-lite`           | Cheapest, simple classification/summarization                     |
-| `google/gemini-3-pro-image-preview`      | Image generation                                                  |
-| `google/gemini-3.1-flash-image-preview`  | Fast image generation/editing                                     |
-
-### Patterns used
-
-- **Tool-calling for structured output** — `process-note`, `generate-questions`, `semantic-search`, `cluster-notes` all force a `tool_choice` so the model returns clean, schema-validated JSON instead of free text.
-- **SSE streaming** — `chat-with-notes` streams tokens from the gateway directly through to the client for the Second Brain chat.
-- **Plain completion** — `rewrite-note` uses a simple chat completion for tone/length transforms.
-- **Error surfacing** — every function maps `429` → "Rate limited" and `402` → "AI credits exhausted" so the UI can show a meaningful toast.
-
----
-
-## Project Structure
-
-```
-├── src/
-│   ├── routes/
-│   │   ├── __root.tsx              # Root layout (HTML shell, Toaster, 404)
-│   │   └── index.tsx               # Auth gate + Dashboard
-│   ├── components/
-│   │   ├── AuthForm.tsx            # Email/password sign-in & sign-up
-│   │   ├── Dashboard.tsx           # Main view: grid/timeline/insights/clusters/graph/goals
-│   │   ├── NoteInput.tsx           # Textarea + Smart Save + AI Suggest
-│   │   ├── NoteCard.tsx            # Note card: markdown, pin, tags, AI tools
-│   │   ├── SearchBar.tsx           # Keyword search input
-│   │   ├── FolderSidebar.tsx       # Left sidebar: folder list, create, rename, delete
-│   │   ├── DateFilter.tsx          # Calendar/date filter
-│   │   ├── TimelineView.tsx        # Notes grouped by date
-│   │   ├── TodoList.tsx            # Local-first to-do list view
-│   │   ├── KnowledgeDashboard.tsx  # Insights: activity, tags, folders
-│   │   ├── TopicClusters.tsx       # AI semantic clustering view
-│   │   ├── GraphView.tsx           # Force-directed knowledge graph (notes + relations)
-│   │   ├── GoalsView.tsx           # Goals CRUD + AI progress + note linking
-│   │   ├── SecondBrainChat.tsx     # Floating streaming chat (notes + goals context)
-│   │   ├── CommandPalette.tsx      # ⌘K / Ctrl+K quick navigation
-│   │   ├── FocusMode.tsx           # Distraction-free writing mode
-│   │   ├── SideRays.tsx            # Atmospheric animated ray background for focus mode
-│   │   ├── ThemeToggle.tsx         # Light/dark toggle
-│   │   ├── HealthStatus.tsx        # Edge Function health popover (live status, per-fn errors)
-│   │   ├── AiActivityBanner.tsx    # Per-function AI error + last successful result banner
-│   │   └── ui/                     # shadcn/ui library
-│   ├── lib/
-│   │   └── folders.ts              # AI folder normalization (canonical set + Title Case)
-│   ├── integrations/supabase/      # Auto-generated client + types
-│   ├── styles.css                  # Tailwind v4 + OKLCH tokens
-│   └── router.tsx
-├── supabase/
-│   ├── functions/
-│   │   ├── process-note/           # AI: summary + tags + folder
-│   │   ├── suggest-notes/          # AI: 3 note suggestions from a topic
-│   │   ├── rewrite-note/           # AI: rewrite/expand/simplify/tone shift
-│   │   ├── generate-questions/     # AI: 3 Socratic reflection questions
-│   │   ├── cluster-notes/          # AI: group notes into 2–6 topic clusters
-│   │   ├── link-notes/             # AI: detect related/extends/contradicts relations
-│   │   ├── analyze-goal/           # AI: progress %, gaps, next steps for a goal
-│   │   ├── suggest-goal-notes/     # AI: pick 3–7 notes most relevant to a goal
-│   │   ├── chat-with-notes/        # AI: streaming Second Brain chat (notes + goals)
-│   │   └── health-check/           # Pings every edge fn, reports status + env
-│   └── migrations/
-└── project.md
+Cloudflare Workers: hosts the TanStack Start web app / SSR
+Browser localStorage: to-do list only
 ```
 
----
+AI requests are initiated from the browser through the Edge Function API, not by exposing the gateway secret to the browser. Database reads and writes use the authenticated browser client, with access enforced by database policies.
 
-## Feature Phases
+### Routes and page structure
 
-### Phase 0 — Core (MVP)
+| Route | Page | Behavior |
+| --- | --- | --- |
+| `/` | `src/routes/index.tsx` → `Dashboard` or `AuthForm` | Checks the browser auth session after mounting. Signed-out users see sign-in; signed-in users see the note workspace. |
+| `/history` | `src/routes/history.tsx` → `HistoryPage` | Search and review note versions; restoring a version updates its note. The page checks for a signed-in user. |
+| `/folder-settings` | `src/routes/folder-settings.tsx` → `FolderSettingsPage` | Edit personal folder names and AI filing guidance, run a sample preview, and save settings. The page checks for a signed-in user. |
 
-- Email/password auth with Supabase, RLS-protected `notes` table.
-- Smart Save: write a note → `process-note` returns `{ summary, tags, folder }` → stored in DB.
-- AI Suggest: enter a topic → `suggest-notes` returns 3 starter notes.
-- Responsive card grid, keyword search, folder filter, light/dark theme.
+`src/routes/__root.tsx` provides the HTML shell, shared document metadata, route outlet, and toast host. Each content route defines its own title, description, Open Graph, and Twitter card metadata. `src/routeTree.gen.ts` is generated by the TanStack route plugin; it is not maintained by hand.
 
-### Phase 1 — Organization & Navigation
+Authentication is currently handled in the page components rather than a protected route layout. The index route delays auth bootstrap until after client mount to avoid server/client hydration mismatches.
 
-- **Pin & priority notes** — `pinned` boolean column; pinned notes sort to the top.
-- **Markdown rendering** — `react-markdown` in `NoteCard` for headings, lists, bold, code.
-- **Custom tag editing** — inline add/remove tags directly on a card.
-- **Command Palette** (`⌘K` / `Ctrl+K`) — quick navigation to input, search, theme toggle.
+### Main UI responsibilities
 
-### Phase 2 — AI Content Tools & Views
+- `Dashboard.tsx` coordinates note loading, filtering, views, AI actions, folder state, retry/error state, and note persistence.
+- `NoteInput.tsx` captures a title and note body, requests AI processing, and lets the user edit the returned summary, tags, and folder before saving.
+- `NoteCard.tsx` displays and edits a note, including its title, folder, tags, pin state, history, and AI actions.
+- `FolderSidebar.tsx` lists and manages folders and filters the note view.
+- `FolderSettingsPage.tsx` edits per-user folder choices and filing instructions; its preview sends the unsaved settings to the real `process-note` function without saving a note.
+- `HistoryPage.tsx` presents current notes alongside their previous versions. `NoteHistoryDialog.tsx` provides per-note history.
+- Additional views/components provide timeline, insights, semantic clusters, knowledge graph, goals, chat, focus mode, and to-dos.
+- `src/lib/folders.ts` normalizes folder labels. `src/lib/folderSettings.ts` defines defaults, loads/saves user settings, and builds the processing request body.
+- `src/integrations/supabase/` contains generated database types, the browser client, and auth helpers. Generated files are managed by the platform.
 
-- **Rewrite & Expand** (`rewrite-note`) — five actions: rewrite, expand, simplify, professional, casual. Re-runs `process-note` after to refresh metadata.
-- **Reflective Questions** (`generate-questions`) — generates 3 Socratic questions per note.
-- **Timeline View** — notes grouped chronologically by date.
-- **Focus Mode** — full-screen distraction-free editor with character counter.
-- **Date Filter** — calendar-based filtering by created date.
-- **Edit existing notes** — full edit + re-run AI processing.
+## Data model and ownership
 
-### Phase 3 — Discovery & Visualization
+Application tables live in the `public` schema. RLS is enabled and policies scope user-owned rows to the signed-in user. The browser client is used for ordinary user reads and writes.
 
-- **Second Brain Chat** (`chat-with-notes`) — floating streaming chat that uses the user's notes as context.
-- **Knowledge Dashboard** (`KnowledgeDashboard.tsx`) — weekly activity bars, tag frequency, folder stats.
-- **Topic Clustering** (`cluster-notes`) — AI groups notes into 2–6 named semantic clusters.
+| Table | Purpose and key fields |
+| --- | --- |
+| `notes` | User-owned note body, title, AI summary, tags, folder, pin state, and timestamps. |
+| `note_versions` | Previous title, body, summary, tags, folder, change type, and timestamp for a note. |
+| `note_relations` | User-owned, typed links between notes (`related_to`, `extends`, or `contradicts`) with confidence. |
+| `goals` | User-owned goal title, description, status, and timestamps. |
+| `goal_notes` | User-owned many-to-many links between goals and notes. |
+| `user_folder_settings` | One user's folder list and AI filing guidance. |
 
-### Phase 4 — Productivity
+Database triggers update timestamps and snapshot the old note when title, content, summary, folder, or tags change. A content change is recorded as an `edit`; other tracked changes are recorded as an `ai_update`. Deleting a note cascades to its note versions and note relations. To-do items are not a database table; they remain in `localStorage`.
 
-- **To-do List View** (`TodoList.tsx`) — dedicated view mode (alongside Grid, Timeline, Insights, Clusters) with add/toggle/delete tasks, All/Active/Done filters, and `localStorage` persistence. Replaces the prior floating popup.
-- **Search simplification** — semantic search removed; keyword search via `SearchBar` is the single search path.
+The SQL migration history is under `supabase/migrations/`. It creates the note, graph, goal, version-history, title, and folder-settings schema, along with the associated RLS policies, indexes, and triggers.
 
----
+## AI functions and call flows
 
-### Phase 5 — Knowledge Graph & Goal-Oriented System
+All current AI Edge Functions use the Lovable AI Gateway and the `google/gemini-3-flash-preview` model. Functions validate input and return structured data or a stream; the gateway credential is read by the function, never by UI code.
 
-**Knowledge Graph** — notes stop being isolated cards and become a connected graph of ideas.
+| Function | Used for |
+| --- | --- |
+| `process-note` | Returns a note summary, tags, and folder; accepts a folder list and optional filing guidance. |
+| `suggest-notes` | Suggests starter notes from a topic. |
+| `rewrite-note` | Rewrites, expands, simplifies, or changes the tone of note text. |
+| `generate-questions` | Generates reflective questions about a note. |
+| `cluster-notes` | Groups notes into topic clusters. |
+| `link-notes` | Suggests typed relations between notes. |
+| `suggest-goal-notes` | Suggests notes relevant to a goal. |
+| `analyze-goal` | Analyzes goal progress, knowledge gaps, and next steps. |
+| `chat-with-notes` | Streams answers using note and goal context. |
+| `health-check` | Checks the configured AI functions and reports per-function status and errors. |
 
-- New `note_relations` table (`source_note_id`, `target_note_id`, `relation_type` ∈ `related_to|extends|contradicts`, `confidence`, RLS-scoped to the user).
-- New edge function `link-notes` — sends a new note + candidate notes to Gemini and uses tool-calling to return the top 3–5 typed relations with confidence scores.
-- **Auto-linking** — `Dashboard.handleSave` invokes `link-notes` in the background after every save and upserts the relations.
-- **Graph View** (`GraphView.tsx`) — renders notes as nodes and relations as edges using a custom force-directed SVG simulation (no extra deps). Click a node to highlight connections, see a side panel with linked notes, and remove relations. The toolbar action **AI Link Notes** re-runs linking on demand.
-- **Goal overlay** — nodes belonging to any goal are tinted with the primary color so the graph doubles as a goal-progress visualization.
+### Save and filing flow
 
-**Goal-Oriented System** — connects notes to user goals and tracks progress intelligently.
+1. The user enters a title and note text in `NoteInput` and chooses Smart Save.
+2. The browser loads the user's folder settings and invokes `process-note` with the note text, folder list, and optional filing guidance.
+3. The user reviews and may edit the AI summary, tags, and folder before confirming.
+4. `Dashboard` inserts the note through the authenticated browser client. AI-suggested folder names are normalized; user-selected folders are retained on later retries.
+5. Note relations may be generated after save and stored through the browser client under RLS.
+6. The Folder Settings preview uses the same processing function and current unsaved settings, but does not create a note or save settings.
 
-- New `goals` table (`title`, `description`, `status` ∈ `active|completed`, RLS) and `goal_notes` junction table.
-- **Goals View** (`GoalsView.tsx`) — create/edit/delete goals, toggle complete, and click a goal to expand a checklist that links/unlinks any note.
-- New edge function `suggest-goal-notes` — on goal creation, Gemini picks the 3–7 most relevant existing notes and they are auto-linked.
-- New edge function `analyze-goal` — on demand, returns `{ progress%, summary, missing_knowledge[], next_steps[] }` rendered with a progress bar, gap badges, and a next-steps list.
-- **Second Brain Chat now includes goals** — `chat-with-notes` accepts a `goals` array and prepends them to the system prompt so answers are aware of what the user is trying to accomplish.
+Dashboard AI actions use a retry wrapper with up to three attempts for transient, authorization/key-related, rate-limit, and gateway failures. AI errors and last successful results are surfaced in the dashboard; note retries have per-note status and retry controls. Smart Save and the settings preview invoke `process-note` directly and display errors in their respective UI.
 
----
+### Version history flow
 
-### Phase 6 — Developer Productivity
+An update to tracked note fields triggers a database snapshot of the old note values in `note_versions`. The history views load notes and versions through the authenticated client. Restore writes the selected version's title, content, summary, folder, and tags back to the note; the trigger records the version being replaced as a new history entry.
 
-- **Tag filtering & tag cloud** (`TagFilter.tsx`) — multi-select tag chips above the grid that combine with search/folder/date filters. The Insights view also renders a frequency-weighted tag cloud.
-- **Code syntax highlighting** (`CodeBlock.tsx`) — fenced code blocks inside notes are highlighted via `react-syntax-highlighter` (Prism, light/dark theme aware) with a per-block copy-to-clipboard button.
-- **Markdown export** — each note card has a Download (⬇) action that exports the raw markdown content as a `.md` file (browser-side `Blob`, no backend call).
+## Source layout
 
----
-
-### Phase 7 — Reliability & Observability
-
-- **Smart Save preview & edit** (`NoteInput.tsx`) — after `process-note` returns, the AI-generated **summary, folder, and tags** are shown in an inline review card. Users can rename the folder, add/remove tags (Enter / comma to add, Backspace to delete the last), or dismiss before committing. Only on **Save note** does the data get persisted, so AI output is always editable before it lands in the DB.
-- **Edge Function health check** (`supabase/functions/health-check/index.ts` + `HealthStatus.tsx`) — a dedicated edge function pings every other function with `OPTIONS` requests in parallel and reports `{ overall, env: { aiKeyConfigured, supabaseUrl }, functions: [{ name, status, httpStatus, latencyMs, error }] }`. The dashboard header shows a live status icon (green/amber/red) with a popover listing per-function latency, HTTP code, and **per-function error messages** when down. Auto-refreshes every 60s. Configured with `verify_jwt = false` in `supabase/config.toml`.
-- **Per-function AI error banner** (`AiActivityBanner.tsx`) — every AI call in `Dashboard.tsx` is routed through a `callAiFn` wrapper that records `{ message, at }` per function name on failure and the **last successful AI summary** on success. A banner above the note input shows current per-function errors (dismissible) alongside the most recent successful result, so a failed `process-note` / `link-notes` / `rewrite-note` / `generate-questions` / `analyze-goal` call never wipes the user's previous successful AI output and always surfaces the specific error message.
-- **Note version history** (`NoteHistoryDialog.tsx` + `note_versions` table) — a Postgres trigger (`snapshot_note_version`) snapshots the previous `{ content, summary, folder, tags }` of a note into `note_versions` whenever any of those fields change, tagged as `edit` or `ai_update`. Each `NoteCard` exposes a History button that opens a dialog listing all prior versions with timestamp, change type, and a **Restore** action that loads the version back into the editor.
-- **History page** (`/history` + `HistoryPage.tsx`) — a dedicated, searchable page groups every note's saved versions and shows the current and previous summaries, tags, folders, content, timestamps, and change type. Retry-generated AI updates appear as `ai_update` entries, with filters for all changes, AI updates, or edits.
-- **Client-only home route fix** (`src/routes/index.tsx`) — replaced the unavailable `ClientOnly` import from `@tanstack/react-router` with a local `mounted` gate so the Supabase auth bootstrap only runs in the browser without breaking the dynamic route module load.
-- **Retry UI for failed note processing** (`NoteCard.tsx`) — when `process-note` fails, affected notes show a prominent **Retry AI processing** button inside a full-width error card with an explanatory message. While the retry runs, the entire card is locked: a frosted overlay with a spinner and "Regenerating summary & tags…" blocks all interactions, all action buttons are disabled, and the Retry button itself becomes a loading state. The bulk **Retry all failed** action in the grid still re-runs every failed note in one batch with a concurrency limit.
-- **Automatic retry/fallback in `callAiFn`** — all AI calls are wrapped in an exponential-backoff retry loop with jitter (up to 3 attempts) that detects key-related and transient gateway errors (`API_KEY` / `not configured` / `unauthorized` / 401 / 429 / 5xx / network errors). Payload-level errors are also retried. If all attempts fail, the final error is recorded in `AiActivityBanner` so the manual retry UI still takes over.
-
-### Phase 8 — UI/UX Refinement
-
-- **Left sidebar folder management** (`FolderSidebar.tsx`) — replaces the old pill filter with a persistent left sidebar that lists every folder with a note count, supports inline **rename** and **delete** (with confirmation), and has a dedicated **New folder** input. Selecting a folder filters the grid instantly, and deleting a folder moves its notes to `Uncategorized`. The layout is wrapped in `SidebarProvider` with a `SidebarTrigger` for responsive collapse.
-- **Atmospheric focus mode** (`FocusMode.tsx` + `SideRays.tsx`) — the full-screen writing surface now has a minimal, slow-moving ambient background: a custom `SideRays` WebGL/canvas-style ray animation (toned-down speed, desaturated white/ slate colors, low opacity and blend) plus a subtle `ambient-glow` radial pulse behind the content. The effect is purely decorative and obeys `prefers-reduced-motion`.
-
-### Phase 9 — Smarter Folder Naming & Manual Override
-
-- **Canonical folder set** (`src/lib/folders.ts`) — AI-suggested folders are normalized into a small, consistent, human-readable set (`Work`, `Personal`, `Ideas`, `Projects`, `Learning`, `Health`, `Finance`, `Travel`, `Reading`, `Journal`, `Uncategorized`) via `normalizeFolderName()`. The helper collapses separators (`work_stuff` → "Work"), splits camelCase/PascalCase, strips noise characters, maps common aliases (`job`/`office` → `Work`, `fitness` → `Health`, `diary` → `Journal`), and Title-Cases any genuinely new folder name. This keeps the sidebar free of near-duplicates like "work-stuff", "WORK", "Work Notes".
-- **AI folder prompt tightened** (`process-note/index.ts`) — the system prompt and `organize_note` tool description now instruct Gemini to prefer the canonical folders, only invent a new folder when none fits, and always emit clean 1–2 word Title Case names (no slugs, snake_case, ALL CAPS, emojis, or dates).
-- **Manual folder override** (`NoteCard.tsx` + `Dashboard.tsx`) — every note card shows its folder as a clickable label. Clicking it turns into an inline input with a `<datalist>` of existing folders (autocomplete + free entry); pressing **Enter** saves, **Escape** cancels. The entered value is run through `normalizeFolderName` before persisting, so manual entries stay consistent with the AI's naming. The override is honored across save, edit, rewrite, and retry: retries **preserve any user-assigned folder** and only auto-file notes that are still `Uncategorized`, while `applyAiFolder` registers new AI folders into the sidebar and switches the active view to them.
-
-
-
-## Edge Functions Reference
-
-| Function              | Model                              | Output mechanism      | Purpose                                    |
-| --------------------- | ---------------------------------- | --------------------- | ------------------------------------------ |
-| `process-note`        | `google/gemini-3-flash-preview`    | Tool calling          | `{ summary, tags[3], folder }`             |
-| `suggest-notes`       | `google/gemini-3-flash-preview`    | Tool calling          | 3 `{ title, content }` suggestions         |
-| `rewrite-note`        | `google/gemini-3-flash-preview`    | Plain completion      | Rewritten text (5 action variants)         |
-| `generate-questions`  | `google/gemini-3-flash-preview`    | Tool calling          | 3 reflective questions                     |
-| `cluster-notes`       | `google/gemini-3-flash-preview`    | Tool calling          | 2–6 clusters with name + description       |
-| `link-notes`          | `google/gemini-3-flash-preview`    | Tool calling          | 3–5 typed relations with confidence        |
-| `analyze-goal`        | `google/gemini-3-flash-preview`    | Tool calling          | Progress %, gaps, next steps for a goal    |
-| `suggest-goal-notes`  | `google/gemini-3-flash-preview`    | Tool calling          | 3–7 note IDs most relevant to a goal       |
-| `chat-with-notes`     | `google/gemini-3-flash-preview`    | **SSE streaming**     | Conversational answers (notes + goals)     |
-
----
-
-## Database Schema
-
-| Table             | Purpose                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| `notes`           | Brain-dump content, AI-generated `summary` / `tags` / `folder`, `pinned` flag.           |
-| `note_relations`  | Typed edges between notes: `relation_type` ∈ `related_to`/`extends`/`contradicts` + `confidence`. Unique on (source, target, type). |
-| `goals`           | User goals with `status` ∈ `active`/`completed`.                                         |
-| `goal_notes`      | Many-to-many junction linking notes to goals.                                            |
-
-All tables are RLS-protected — every row is scoped to `auth.uid() = user_id`.
-
----
-
-## Data Flow
-
-```
-            ┌─────────────────────────────────────────┐
-            │              User in Browser             │
-            └───────────────┬─────────────────────────┘
-                            │
-   ┌────────────┬───────────┼────────────┬─────────────┐
-   ▼            ▼           ▼            ▼             ▼
-Smart Save   Chat       Insights      Graph         Goals
-   │            │           │            │             │
-   ▼            ▼           ▼            ▼             ▼
-process-note  chat-     cluster-     link-notes    suggest-goal-notes
-rewrite-note  with-     notes        (auto on     analyze-goal
-generate-     notes                  every save)
-questions     (SSE,
-              notes+
-              goals)
-   │            │           │            │             │
-   └─────┬──────┴───────────┼────────────┴─────────────┘
-         ▼                  ▼
-  Lovable AI Gateway   Supabase tables (RLS per user)
-  google/gemini-3-     notes · note_relations
-  flash-preview        goals · goal_notes
+```text
+src/
+  routes/                   TanStack file routes: home, history, folder settings, root shell
+  components/               Dashboard, notes, filters, views, dialogs, and UI primitives
+  integrations/supabase/    Generated browser client/types and auth helpers
+  lib/                      Folder normalization and folder-settings helpers
+  styles.css                Tailwind v4 setup and semantic theme tokens
+  router.tsx                TanStack Router configuration
+  routeTree.gen.ts          Plugin-generated route tree; do not edit manually
+supabase/
+  functions/                Deno AI and health-check Edge Functions
+  migrations/               SQL schema, RLS policies, indexes, and triggers
+project.md                  This architecture reference
+roadmap.md                  Current feature completion and outstanding validation
 ```
 
----
+## Current validation status
 
-## Environment Variables
-
-| Variable                         | Source         | Purpose                    |
-| -------------------------------- | -------------- | -------------------------- |
-| `VITE_SUPABASE_URL`              | Auto (Lovable) | Supabase project URL       |
-| `VITE_SUPABASE_PUBLISHABLE_KEY`  | Auto (Lovable) | Supabase publishable key   |
-| `LOVABLE_API_KEY`                | Auto (Edge Fn) | AI Gateway authentication  |
-
----
-
-## Future Enhancements
-
-- [ ] Markdown / PDF import & export
-- [ ] Daily brain-dump prompt with streak tracking
-- [ ] Drag-and-drop notes between folders
-- [ ] Voice-to-note with Gemini transcription
-- [ ] Realtime multi-device sync (notes, relations, goals)
-- [ ] Sync to-do list to the backend (currently `localStorage`)
-- [ ] Weekly AI digest: "You're progressing on X, focus on Y"
-- [ ] Drag-to-create relations directly in the Graph View
-- [ ] Public API / plugin system
-
-
-Here’s a more detailed and polished version of your roadmap items with clear feature descriptions:
-
-### Product Roadmap
-
-#### ✅ Markdown / PDF Import & Export
-
-Allow users to seamlessly import notes in **Markdown (`.md`) and PDF formats**, making migration from other tools effortless. Export notes, collections, or entire workspaces into **clean Markdown files or shareable PDFs** for backup, collaboration, or offline access. Formatting, headings, links, and embedded content should remain intact during conversion.
-
-#### ✅ Daily Brain-Dump Prompt with Streak Tracking
-
-Introduce a **daily reflection / brain-dump system** that encourages consistent journaling and idea capture. Users receive a simple prompt each day (e.g., *“What’s on your mind today?”* or *“What are you focusing on?”*). Track consistency with **streaks, completion history, and activity insights** to build long-term habits without adding pressure.
-
-#### ✅ Drag-and-Drop Notes Between Folders
-
-Enable a **smooth drag-and-drop interface** for organizing notes. Users can quickly move notes between folders, categories, or projects without opening settings or menus. Include **visual feedback, nested folder support, and instant sync updates** to make workspace organization feel effortless.
-
-#### ✅ Voice-to-Note with Gemini Transcription
-
-Add **voice recording capabilities** so users can instantly convert spoken thoughts into notes using **Gemini-powered transcription**. Support **real-time speech-to-text**, punctuation detection, and automatic formatting for readability. Ideal for quick idea capture, meetings, or hands-free note-taking.
-
-#### ✅ Realtime Multi-Device Sync (Notes, Relations, Goals)
-
-Implement **real-time synchronization across all devices** so updates appear instantly whether users are on desktop, tablet, or mobile. Sync not only notes, but also **graph relations, goals, tags, and workspace structure**, ensuring a consistent experience everywhere with conflict resolution for simultaneous edits.
-
-#### ✅ Sync To-Do List to Backend (Currently `localStorage`)
-
-Move the to-do system from **browser `localStorage` to a secure backend database**, enabling persistence across devices and sessions. This allows **cloud backup, account-level sync, real-time updates, and improved reliability**, preventing task loss when switching browsers or clearing storage.
-
-#### ✅ Weekly AI Digest: *“You’re progressing on X, focus on Y”*
-
-Generate a **personalized weekly AI productivity report** summarizing user activity, learning progress, and focus patterns. The digest can highlight:
-
-* What the user made progress on
-* Areas receiving less attention
-* Suggested priorities for the upcoming week
-* Behavioral insights and productivity trends
-
-Example:
-
-> *“You made strong progress on product design this week. Your goal-planning activity dropped by 30% — consider revisiting roadmap priorities.”*
-
-#### ✅ Drag-to-Create Relations in Graph View
-
-Improve the graph experience by allowing users to **visually create relationships between notes using drag gestures**. Instead of manual linking, users can simply **drag from one node to another** to establish connections. Include **relation labels, previews, and auto-suggestions** for a more intuitive knowledge graph workflow.
-
-#### ✅ Public API / Plugin System
-
-Launch a **developer-friendly API and plugin ecosystem** to extend platform functionality. Users and developers can integrate external tools, automate workflows, and build custom extensions. Potential use cases:
-
-* Calendar & task integrations
-* Custom AI workflows
-* Third-party knowledge sync
-* Community-built plugins and automations
-
-This creates a scalable ecosystem where advanced users can customize the product beyond core functionality.
-
-This version feels more product-ready and investor/changelog-friendly.
-
+The preview build was reported as successful before this documentation update. The remaining tracked validation item in `roadmap.md` is a signed-in end-to-end filing test: save user-specific folder settings, run the preview, then save a note and confirm it lands in the intended folder. That test requires an active signed-in preview session.

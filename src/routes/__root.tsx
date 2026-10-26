@@ -31,6 +31,8 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { link: { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" } },
+      { link: { rel: "alternate icon", href: "/favicon.ico" } },
       { title: "Knowledge Hub — AI-Powered Note Organization" },
       { name: "description", content: "Smart personal knowledge hub that uses AI to organize your thoughts and notes." },
       { name: "author", content: "Knowledge Hub" },

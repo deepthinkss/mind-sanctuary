@@ -33,7 +33,7 @@ function ErrorFallback({ error, reset }: { error: unknown; reset: () => void }) 
         </p>
         {import.meta.env.DEV && error.message && (
           <pre className="mt-4 max-h-40 overflow-auto rounded-md bg-muted p-3 text-left font-mono text-xs text-destructive">
-            {error.message}
+            {message}
           </pre>
         )}
         <div className="mt-6 flex items-center justify-center gap-3">

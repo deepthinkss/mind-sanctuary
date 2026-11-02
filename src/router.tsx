@@ -63,6 +63,9 @@ function ErrorFallback({
   );
 }
 
+// The updated router types expect error components as lazy components.
+const DefaultErrorComponent = lazy(async () => ({ default: ErrorFallback }));
+
 export const getRouter = () => {
   const router = createRouter({
     routeTree,

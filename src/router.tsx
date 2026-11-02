@@ -2,13 +2,8 @@ import { lazy } from "react";
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-function ErrorFallback({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+function ErrorFallback({ error, reset }: { error: unknown; reset: () => void }) {
+  const message = error instanceof Error ? error.message : "";
   const router = useRouter();
 
   return (

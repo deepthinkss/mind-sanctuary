@@ -7,7 +7,7 @@ import SideRays from "./SideRays";
 interface FocusModeProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (content: string, title: string) => Promise<void>;
+  onSave: (content: string, title: string, ai?: undefined, saveId?: string) => Promise<void>;
   isProcessing: boolean;
   /** Inline AI generation failure (e.g. missing API key) shown as a banner with retry. */
   aiError?: string | null;
@@ -21,6 +21,8 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
   const [title, setTitle] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const saveIdRef = useRef<string | null>(null);
+  const saveInFlightRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -39,16 +41,21 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
   }, [isOpen, onClose]);
 
   const handleSave = async () => {
-    if (!content.trim() || isProcessing) return;
+    if (!content.trim() || isProcessing || saveInFlightRef.current) return;
+    if (!saveIdRef.current) saveIdRef.current = crypto.randomUUID();
+    saveInFlightRef.current = true;
     setSaveError(null);
     try {
-      await onSave(content.trim(), title.trim());
+      await onSave(content.trim(), title.trim(), undefined, saveIdRef.current);
       setTitle("");
       setContent("");
+      saveIdRef.current = null;
       onClose();
     } catch (err: any) {
       // Keep the note open with the draft intact so the user can retry.
-      setSaveError(err?.message || "AI generation failed. Check your API key configuration.");
+      setSaveError(err?.message || "Please try saving again.");
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
 
@@ -105,10 +112,22 @@ export function FocusMode({ isOpen, onClose, onSave, isProcessing, aiError, onDi
           <div className="mx-auto flex w-full max-w-2xl items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-destructive">AI generation failed</p>
+              <p className="text-sm font-medium text-destructive">{saveError ? "Note wasn’t saved. Your draft is still here." : "AI generation failed"}</p>
               <p className="mt-0.5 break-words text-xs text-destructive/90">{activeError}</p>
             </div>
-            {onRetryAi && (
+            {saveError ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 border-destructive/40"
+                onClick={handleSave}
+                disabled={isProcessing}
+                aria-busy={isProcessing}
+              >
+                {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {isProcessing ? "Saving…" : "Retry save"}
+              </Button>
+            ) : onRetryAi && (
               <Button
                 variant="outline"
                 size="sm"

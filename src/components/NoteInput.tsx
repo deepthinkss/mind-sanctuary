@@ -25,9 +25,11 @@ interface NoteInputProps {
 
 export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps) {
   const saveIdRef = useRef<string | null>(null);
+  const saveInFlightRef = useRef(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveAttempt, setSaveAttempt] = useState<"smart" | "quick" | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -39,6 +41,7 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
     setTitle("");
     setContent("");
     setSaveError(null);
+    setSaveAttempt(null);
     setSuggestions([]);
     setPreview(null);
     setTagInput("");
@@ -67,27 +70,40 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   };
 
   const handleConfirmSave = async () => {
-    if (!preview || !content.trim() || isProcessing) return;
+    if (!preview || !content.trim() || isProcessing || saveInFlightRef.current) return;
     if (!saveIdRef.current) saveIdRef.current = crypto.randomUUID();
+    saveInFlightRef.current = true;
+    setSaveAttempt("smart");
     setSaveError(null);
     try {
       await onSave(content.trim(), title.trim(), preview, saveIdRef.current);
       resetAll();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Please try saving again.");
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
 
   const handleQuickSave = async () => {
-    if (!content.trim() || isProcessing) return;
+    if (!content.trim() || isProcessing || saveInFlightRef.current) return;
     if (!saveIdRef.current) saveIdRef.current = crypto.randomUUID();
+    saveInFlightRef.current = true;
+    setSaveAttempt("quick");
     setSaveError(null);
     try {
       await onSave(content.trim(), title.trim(), undefined, saveIdRef.current);
       resetAll();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Please try saving again.");
+    } finally {
+      saveInFlightRef.current = false;
     }
+  };
+
+  const handleRetrySave = () => {
+    if (saveAttempt === "smart") void handleConfirmSave();
+    else if (saveAttempt === "quick") void handleQuickSave();
   };
 
   const addTag = (tag: string) => {
@@ -207,8 +223,8 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
             variant="outline"
             size="sm"
             className="h-8 shrink-0 gap-1.5 border-destructive/40"
-            onClick={handleConfirmSave}
-            disabled={!preview || isProcessing}
+            onClick={handleRetrySave}
+            disabled={!saveAttempt || isProcessing}
           >
             {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Retry save

@@ -198,7 +198,7 @@ export function Dashboard() {
   }, [folderSettings]);
 
 
-  const handleSave = async (content: string, title: string, ai?: { summary: string | null; tags: string[]; folder: string }) => {
+  const handleSave = async (content: string, title: string, ai?: { summary: string | null; tags: string[]; folder: string }, saveId?: string) => {
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -209,13 +209,44 @@ export function Dashboard() {
         ? { summary: ai.summary, tags: ai.tags, folder: normalizeWithUserFolders(ai.folder, folderSettings.folders) }
         : { summary: null as string | null, tags: [] as string[], folder: "Uncategorized" };
       const noteTitle = title.trim() || content.split(/\r?\n/)[0]?.trim().slice(0, 120) || "Untitled note";
-      const { data: note, error: insertError } = await supabase
+      const noteId = saveId || crypto.randomUUID();
+      const { data: insertedNote, error: insertError } = await supabase
         .from("notes")
-        .insert({ user_id: user.id, title: noteTitle, content, ...initial })
+        .insert({ id: noteId, user_id: user.id, title: noteTitle, content, ...initial })
         .select()
         .single();
-      if (insertError) throw insertError;
-      setNotes((prev) => [note, ...prev]);
+      let note = insertedNote;
+      if (insertError) {
+        if (insertError.code !== "23505") throw insertError;
+        const { data: existingNote, error: lookupError } = await supabase
+          .from("notes")
+          .select("*")
+          .eq("id", noteId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (lookupError || !existingNote) throw insertError;
+
+        const sameSave = existingNote.title === noteTitle
+          && existingNote.content === content
+          && existingNote.summary === initial.summary
+          && JSON.stringify(existingNote.tags || []) === JSON.stringify(initial.tags)
+          && existingNote.folder === initial.folder;
+        if (sameSave) {
+          note = existingNote;
+        } else {
+          const { data: updatedNote, error: updateError } = await supabase
+            .from("notes")
+            .update({ title: noteTitle, content, ...initial })
+            .eq("id", noteId)
+            .eq("user_id", user.id)
+            .select()
+            .single();
+          if (updateError) throw updateError;
+          note = updatedNote;
+        }
+      }
+      if (!note) throw new Error("The note could not be confirmed as saved. Please retry.");
+      setNotes((prev) => [note, ...prev.filter((existing) => existing.id !== note.id)]);
 
 
       if (ai) {

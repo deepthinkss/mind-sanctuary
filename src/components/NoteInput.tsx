@@ -18,7 +18,7 @@ export interface AiPreview {
 }
 
 interface NoteInputProps {
-  onSave: (content: string, title: string, ai?: AiPreview) => Promise<void>;
+  onSave: (content: string, title: string, ai?: AiPreview, saveId?: string) => Promise<void>;
   isProcessing: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }

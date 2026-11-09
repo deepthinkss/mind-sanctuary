@@ -1,7 +1,7 @@
-import { useState, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Loader2, Lightbulb, X, Check, Pencil } from "lucide-react";
+import { Sparkles, Loader2, Lightbulb, X, Check, Pencil, AlertTriangle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { loadFolderSettings, processNoteBody } from "@/lib/folderSettings";
@@ -24,8 +24,12 @@ interface NoteInputProps {
 }
 
 export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps) {
+  const saveIdRef = useRef<string | null>(null);
+  const saveInFlightRef = useRef(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveAttempt, setSaveAttempt] = useState<"smart" | "quick" | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -33,8 +37,11 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   const [tagInput, setTagInput] = useState("");
 
   const resetAll = () => {
+    saveIdRef.current = null;
     setTitle("");
     setContent("");
+    setSaveError(null);
+    setSaveAttempt(null);
     setSuggestions([]);
     setPreview(null);
     setTagInput("");
@@ -63,23 +70,40 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
   };
 
   const handleConfirmSave = async () => {
-    if (!preview || !content.trim() || isProcessing) return;
+    if (!preview || !content.trim() || isProcessing || saveInFlightRef.current) return;
+    if (!saveIdRef.current) saveIdRef.current = crypto.randomUUID();
+    saveInFlightRef.current = true;
+    setSaveAttempt("smart");
+    setSaveError(null);
     try {
-      await onSave(content.trim(), title.trim(), preview);
+      await onSave(content.trim(), title.trim(), preview, saveIdRef.current);
       resetAll();
-    } catch {
-      // Keep the draft so the user can retry; error toast already shown.
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Please try saving again.");
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
 
   const handleQuickSave = async () => {
-    if (!content.trim() || isProcessing) return;
+    if (!content.trim() || isProcessing || saveInFlightRef.current) return;
+    if (!saveIdRef.current) saveIdRef.current = crypto.randomUUID();
+    saveInFlightRef.current = true;
+    setSaveAttempt("quick");
+    setSaveError(null);
     try {
-      await onSave(content.trim(), title.trim());
+      await onSave(content.trim(), title.trim(), undefined, saveIdRef.current);
       resetAll();
-    } catch {
-      // Keep the draft so the user can retry; error toast already shown.
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Please try saving again.");
+    } finally {
+      saveInFlightRef.current = false;
     }
+  };
+
+  const handleRetrySave = () => {
+    if (saveAttempt === "smart") void handleConfirmSave();
+    else if (saveAttempt === "quick") void handleQuickSave();
   };
 
   const addTag = (tag: string) => {
@@ -187,6 +211,26 @@ export function NoteInput({ onSave, isProcessing, textareaRef }: NoteInputProps)
           </div>
         </div>
       </div>
+
+      {saveError && (
+        <div role="alert" className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">Note wasn’t saved. Your draft is still here.</p>
+            <p className="mt-0.5 break-words text-xs">{saveError}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 shrink-0 gap-1.5 border-destructive/40"
+            onClick={handleRetrySave}
+            disabled={!saveAttempt || isProcessing}
+          >
+            {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Retry save
+          </Button>
+        </div>
+      )}
 
       {/* AI preview / edit */}
       {preview && (

@@ -32,7 +32,7 @@ Basically… it turns chaos into clarity.
 | Language         | TypeScript |
 | Styling          | Tailwind CSS v4 |
 | UI Components    | shadcn/ui |
-| Backend          | Supabase (Lovable Cloud) |
+| Backend          | Lovable Cloud (authentication and Postgres) |
 | AI Models        | Google Gemini via Lovable AI Gateway |
 | Runtime          | Deno (Edge Functions) |
 | Deployment       | Cloudflare Workers |
@@ -45,6 +45,7 @@ All AI operations run securely through **Edge Functions** (never client-side).
 
 ### Core Capabilities
 - ✍️ **Smart Save** → Converts raw text into structured notes  
+- 🔐 **Account access** → Email/password sign-up and login; notes and folder settings are saved to the signed-in user's account  
 - 💡 **AI Suggestions** → Generates starter ideas from topics  
 - 🔄 **Rewrite Engine** → Expand, simplify, or change tone  
 - ❓ **Reflective Questions** → Deep thinking prompts  
@@ -74,6 +75,8 @@ supabase/
 - Authentication (Supabase)
 - Smart AI note processing
 - Search + folder filtering
+- Editable note titles and per-user folder names and AI filing guidance
+- Save failures retain the draft and offer retry; the same note ID is reused to prevent duplicates
 - Responsive UI with dark mode  
 
 ### 🟡 Organization

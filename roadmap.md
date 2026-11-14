@@ -2,5 +2,6 @@
 - [x] Add per-user folder and AI filing settings storage.
 - [x] Build the Folder Settings page with an AI-powered sample filing preview and navigation.
 - [x] Apply saved folder settings across note processing and normalization; verify the preview and build.
-- [ ] Run a real note-filing test after signing in to the preview; currently blocked by no active session.
-- [ ] Add Lovable Cloud sign-up/login and ensure each user's data persists across visits.
+- [x] Run a signed-in end-to-end filing test: save folder settings and guidance, verify persistence after reload, run the filing preview, and confirm a real cooking note lands in Recipes.
+- [x] Add Lovable Cloud email/password sign-up and login, with user-owned data retained across visits.
+- [ ] Verify the latest save-failure retry and duplicate-prevention changes in the signed-in preview.

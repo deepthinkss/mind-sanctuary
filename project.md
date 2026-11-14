@@ -10,7 +10,7 @@ Knowledge Hub is a personal note-capture and retrieval app. A user writes a note
 | --- | --- |
 | Web app | React 19 with TanStack Start v1 file-based routes; SSR-capable app hosted on Cloudflare Workers. |
 | Build and styling | Vite 7, TypeScript, Tailwind CSS v4, semantic CSS tokens, shadcn/ui primitives, Lucide icons, Sonner toasts. |
-| Authentication and data | Lovable Cloud provides authentication and Postgres. The generated browser client uses the signed-in user's session; row-level security (RLS) scopes database access. |
+| Authentication and data | Lovable Cloud provides email/password sign-up and login plus Postgres. The browser client uses the signed-in user's session; row-level security (RLS) scopes database access to each user's records. |
 | AI endpoints | Supabase Edge Functions running on Deno. The browser invokes these functions through the generated client; AI credentials remain on the function side. |
 | AI provider | Lovable AI Gateway, currently using `google/gemini-3-flash-preview` in the AI functions. |
 | Local-only data | To-do items are stored in browser `localStorage`; they are not synchronized to the database. |
@@ -47,10 +47,12 @@ AI requests are initiated from the browser through the Edge Function API, not by
 
 Authentication is currently checked in the page components rather than through a shared protected-route layout. The home route delays auth bootstrap until after client mount to avoid server/client hydration mismatches. Ordinary signed-in reads and writes use the browser client and depend on database RLS; this repository's app flow does not use TanStack server functions for these operations.
 
+Email/password sign-up and sign-in are available in `AuthForm.tsx`. On each visit, the app restores the existing auth session; user-owned notes and folder settings are stored in Lovable Cloud and remain available to that account on later visits. Sign-up requests email confirmation.
+
 ### Main UI responsibilities
 
 - `Dashboard.tsx` coordinates note loading, filtering, views, AI actions, folder state, retry/error state, and note persistence. Dashboard state such as active filters, generated questions, and transient processing status is held in React state.
-- `NoteInput.tsx` captures a title and note body, requests AI processing, and lets the user edit the returned summary, tags, and folder before saving.
+- `NoteInput.tsx` captures a title and note body, requests AI processing, and lets the user edit the returned summary, tags, and folder before saving. If a save fails, it keeps the draft and AI preview open, shows the error, and offers a retry.
 - `NoteCard.tsx` displays and edits a note, including its title, folder, tags, pin state, history, and AI actions.
 - `FolderSidebar.tsx` lists and manages folders and filters the note view.
 - `FolderSettingsPage.tsx` edits per-user folder choices and filing instructions; its preview sends the unsaved settings to the real `process-note` function without saving a note.
@@ -61,7 +63,7 @@ Authentication is currently checked in the page components rather than through a
 
 ## Data model and ownership
 
-Application tables live in the `public` schema. RLS is enabled and policies scope user-owned rows to the signed-in user. The browser client is used for ordinary user reads and writes.
+Application tables live in the `public` schema. RLS is enabled and policies scope user-owned rows to the signed-in user. The browser client is used for ordinary user reads and writes. Sign-up and login are available through the email/password form; notes and other owned records are saved under the signed-in user's ID and remain available on later visits.
 
 | Table | Purpose and key fields |
 | --- | --- |
@@ -96,9 +98,9 @@ All current AI Edge Functions use the Lovable AI Gateway and the `google/gemini-
 ### Save and filing flow
 
 1. For Smart Save, the user enters a title and note text in `NoteInput`. The browser loads folder settings and invokes `process-note` with the note text, folder list, and optional filing guidance.
-2. The user reviews and may edit the returned summary, tags, and folder before confirming; only confirmation inserts this reviewed note.
+2. The user reviews and may edit the returned summary, tags, and folder before confirming; only confirmation inserts this reviewed note. If persistence fails, the editor retains the draft and preview, displays the specific error, and allows retry.
 3. Quick Save is a separate path: it inserts the note first, then runs AI organization asynchronously and updates the saved note.
-4. `Dashboard` saves through the authenticated browser client. AI-returned folder names are normalized. A retry preserves an existing non-`Uncategorized` folder; an edit or rewrite can update the folder from the AI result.
+4. `Dashboard` saves through the authenticated browser client. AI-returned folder names are normalized. A retry preserves an existing non-`Uncategorized` folder; an edit or rewrite can update the folder from the AI result. NoteInput and Focus Mode retain a stable note ID for the duration of a save attempt; Dashboard handles a repeated insert by checking that same user's existing row and updating it only when needed, preventing duplicate notes after a retry.
 5. On new-note saves, `Dashboard` may call `link-notes` in the background and store suggested relations through the browser client under RLS. This is not a general every-update trigger.
 6. The Folder Settings preview uses the same processing function and current unsaved settings, but does not create a note or save settings.
 
@@ -128,4 +130,4 @@ roadmap.md                  Current feature completion and outstanding validatio
 
 ## Current validation status
 
-The preview build was reported as successful before this documentation update. The remaining tracked validation item in `roadmap.md` is a signed-in end-to-end filing test: save user-specific folder settings, run the preview, then save a note and confirm it lands in the intended folder. That test requires an active signed-in preview session.
+The signed-in preview filing test passed: the folder list and cooking-related filing guidance were saved and survived reload, the filing preview selected `Recipes` for an unambiguous cooking note, and a real saved note appeared in `Recipes`. The latest save-error retention and duplicate-prevention implementation is documented above; its post-change browser verification remains outstanding. See `roadmap.md` for current validation status.

@@ -9,7 +9,7 @@ Knowledge Hub is a personal note-capture and retrieval app. A user writes a note
 | Layer | Technology and responsibility |
 | --- | --- |
 | Web app | React 19 with TanStack Start v1 file-based routes; SSR-capable app hosted on Cloudflare Workers. |
-| Build and styling | Vite 7, TypeScript, Tailwind CSS v4, semantic CSS tokens, shadcn/ui primitives, Lucide icons, Sonner toasts. |
+| Build and styling | Vite 7, TypeScript, Tailwind CSS v4, semantic CSS tokens, shadcn/ui primitives, Lucide icons, Sonner toasts. Development dependencies also include Lovable's dev-server bridge and HMR gate plugins plus `lovable-tagger`; they are installed but are not currently registered in `vite.config.ts`. |
 | Authentication and data | Lovable Cloud provides email/password sign-up and login plus Postgres. The browser client uses the signed-in user's session; row-level security (RLS) scopes database access to each user's records. |
 | AI endpoints | Supabase Edge Functions running on Deno. The browser invokes these functions through the generated client; AI credentials remain on the function side. |
 | AI provider | Lovable AI Gateway, currently using `google/gemini-3-flash-preview` in the AI functions. |

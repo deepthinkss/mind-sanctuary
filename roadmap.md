@@ -4,4 +4,4 @@
 - [x] Apply saved folder settings across note processing and normalization; verify the preview and build.
 - [x] Run a signed-in end-to-end filing test: save folder settings and guidance, verify persistence after reload, run the filing preview, and confirm a real cooking note lands in Recipes.
 - [x] Add Lovable Cloud email/password sign-up and login, with user-owned data retained across visits.
-- [ ] Verify the latest save-failure retry and duplicate-prevention changes in the signed-in preview.
+- [x] Verify save-failure recovery in the signed-in preview: simulate an insert failure, confirm the draft and retry option remain, retry successfully, and confirm exactly one note persists after reload.

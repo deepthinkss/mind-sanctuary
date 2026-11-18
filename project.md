@@ -130,4 +130,4 @@ roadmap.md                  Current feature completion and outstanding validatio
 
 ## Current validation status
 
-The signed-in preview filing test passed: the folder list and cooking-related filing guidance were saved and survived reload, the filing preview selected `Recipes` for an unambiguous cooking note, and a real saved note appeared in `Recipes`. The latest save-error retention and duplicate-prevention implementation is documented above; its post-change browser verification remains outstanding. See `roadmap.md` for current validation status.
+The signed-in preview filing test passed: the folder list and cooking-related filing guidance were saved and survived reload, the filing preview selected `Recipes` for an unambiguous cooking note, and a real saved note appeared in `Recipes`. The save-retry flow was also verified in the signed-in preview by simulating a temporary insert failure: the title, body, and AI review stayed open; a clear error and `Retry save` action appeared; retry succeeded; and exactly one matching note remained after reload. See `roadmap.md` for current validation status.

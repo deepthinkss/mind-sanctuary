@@ -76,7 +76,7 @@ supabase/
 - Smart AI note processing
 - Search + folder filtering
 - Editable note titles and per-user folder names and AI filing guidance
-- Save failures retain the draft and offer retry; the same note ID is reused to prevent duplicates
+- Save failures retain the draft and offer retry; the same note ID is reused to prevent duplicates (verified in the signed-in preview, including one-note persistence after retry)
 - Responsive UI with dark mode  
 
 ### 🟡 Organization

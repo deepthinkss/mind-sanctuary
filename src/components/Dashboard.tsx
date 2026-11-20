@@ -18,7 +18,7 @@ import { TopicClusters } from "@/components/TopicClusters";
 import { TodoList } from "@/components/TodoList";
 import { GraphView } from "@/components/GraphView";
 import { GoalsView } from "@/components/GoalsView";
-import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History, Settings2 } from "lucide-react";
+import { Brain, LogOut, FileText, Clock, LayoutGrid, Focus, BarChart3, Network, ListTodo, Share2, Target, RotateCw, Loader2, History, Settings2, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -35,6 +35,8 @@ import {
 } from "@/lib/folderSettings";
 
 type NoteWithMeta = Tables<"notes"> & { _questions?: string[] };
+
+const HOW_IT_WORKS_SAMPLE = "I simmered San Marzano tomatoes with garlic and basil for three hours, and saved the ingredients and timing for next time.";
 
 export function Dashboard() {
   const [notes, setNotes] = useState<NoteWithMeta[]>([]);
@@ -58,6 +60,10 @@ export function Dashboard() {
 
   const [extraFolders, setExtraFolders] = useState<string[]>([]);
   const [folderSettings, setFolderSettings] = useState<FolderSettings>(DEFAULT_FOLDER_SETTINGS);
+  const [folderSettingsReady, setFolderSettingsReady] = useState(false);
+  const [isRunningSample, setIsRunningSample] = useState(false);
+  const [sampleResult, setSampleResult] = useState<{ summary: string; tags: string[]; folder: string } | null>(null);
+  const [sampleError, setSampleError] = useState<string | null>(null);
 
   const handleRenameFolder = useCallback(async (oldName: string, newName: string) => {
     const { error } = await supabase.from("notes").update({ folder: newName }).eq("folder", oldName);
@@ -152,8 +158,31 @@ export function Dashboard() {
         });
         return merged;
       });
-    });
+    }).finally(() => setFolderSettingsReady(true));
   }, []);
+
+  const runHowItWorksSample = async () => {
+    if (!folderSettingsReady || isRunningSample) return;
+    setIsRunningSample(true);
+    setSampleError(null);
+    setSampleResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("process-note", {
+        body: processNoteBody(HOW_IT_WORKS_SAMPLE, folderSettings),
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setSampleResult({
+        summary: data?.summary || "No summary returned.",
+        tags: Array.isArray(data?.tags) ? data.tags : [],
+        folder: data?.folder || "Uncategorized",
+      });
+    } catch (err) {
+      setSampleError(err instanceof Error ? err.message : "The sample could not be filed. Please try again.");
+    } finally {
+      setIsRunningSample(false);
+    }
+  };
 
   const fetchGoalNoteIds = async () => {
     const { data } = await supabase.from("goal_notes").select("note_id");
@@ -622,6 +651,68 @@ export function Dashboard() {
       <div className="mb-4 sm:mb-6">
         <NoteInput onSave={handleSave} isProcessing={isProcessing} textareaRef={noteInputRef} />
       </div>
+
+      {/* How it works */}
+      <section aria-labelledby="how-it-works-title" className="mb-5 border-y py-4 sm:mb-6 sm:py-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase text-muted-foreground">A real example</p>
+            <h2 id="how-it-works-title" className="text-lg font-semibold text-foreground">How it works</h2>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runHowItWorksSample}
+            disabled={!folderSettingsReady || isRunningSample}
+            className="gap-1.5"
+          >
+            {isRunningSample ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {isRunningSample ? "Filing sample…" : "Run sample filing"}
+          </Button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-start">
+          <div className="min-w-0">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">01 · Sample note</p>
+            <p className="text-sm leading-relaxed text-foreground">“{HOW_IT_WORKS_SAMPLE}”</p>
+          </div>
+          <ArrowRight className="hidden h-4 w-4 text-muted-foreground md:mt-5 md:block" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">02 · Your saved filing rules</p>
+            <p className="text-sm leading-relaxed text-foreground">
+              {folderSettingsReady
+                ? folderSettings.guidance.trim() || "No extra guidance saved. The organizer uses your folder list and its standard filing rules."
+                : "Loading your saved folder guidance…"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {folderSettings.folders.some((folder) => folder.toLowerCase() === "recipes")
+                ? "Recipes is in your folder list."
+                : "Recipes is not currently in your saved folder list."}
+            </p>
+          </div>
+          <ArrowRight className="hidden h-4 w-4 text-muted-foreground md:mt-5 md:block" aria-hidden="true" />
+          <div className="min-w-0" aria-live="polite">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">03 · AI filing result</p>
+            {sampleError ? (
+              <p role="alert" className="text-sm text-destructive">{sampleError}</p>
+            ) : sampleResult ? (
+              <div>
+                <p className="text-sm font-medium text-foreground">{sampleResult.folder}</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{sampleResult.summary}</p>
+                {sampleResult.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {sampleResult.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-muted-foreground">Run the sample to see its summary, tags, and folder. Nothing will be saved.</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Search & Filter */}
       {notes.length > 0 && (

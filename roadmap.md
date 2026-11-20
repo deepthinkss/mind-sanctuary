@@ -5,3 +5,4 @@
 - [x] Run a signed-in end-to-end filing test: save folder settings and guidance, verify persistence after reload, run the filing preview, and confirm a real cooking note lands in Recipes.
 - [x] Add Lovable Cloud email/password sign-up and login, with user-owned data retained across visits.
 - [x] Verify save-failure recovery in the signed-in preview: simulate an insert failure, confirm the draft and retry option remain, retry successfully, and confirm exactly one note persists after reload.
+- [ ] Re-run the signed-in save-retry flow on the current preview: simulate one failed save, retry, and verify one saved note after reload.
